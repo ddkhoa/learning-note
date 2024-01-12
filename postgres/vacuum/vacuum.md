@@ -81,7 +81,7 @@ The minimum number of updated or deleted tuples needed to trigger a VACUUM on a 
 A fraction of the table to add to `autovacuum_vacuum_threshold` when deciding whether to trigger a VACUUM
 
 The threshold is defined as follow:
-$$Threshold = autovacuum\_vacuum\_threshold + autovacuum\_vacuum\_scale\_factor * number\_live\_tuples$$
+$$Threshold = autovacuum\\_vacuum\\_threshold + autovacuum\\_vacuum\\_scale\\_factor * number\\_live\\_tuples$$
 
 We can interpret the formula as following:
 
