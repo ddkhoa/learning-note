@@ -195,6 +195,6 @@ Execution Time: 0.021 ms
 
 [3] Postgres QA: https://www.postgresql.org/message-id/12553.1135634231@sss.pgh.pa.us#:~:text=A%20plain%20indexscan%20fetches%20one%20tuple%2Dpointer%20at%20a%20time%20from%20the%20index%2C%0Aand%20immediately%20visits%20that%20tuple%20in%20the%20table
 
-[4] Postgres official doc: https://www.postgresql.org/docs/8.1/indexam.html#:~:text=An%20index%20is,own%20index%20entry
+[4] Postgres official document: https://www.postgresql.org/docs/8.1/indexam.html#:~:text=An%20index%20is,own%20index%20entry
 
 [5] Postgres QA: https://www.postgresql.org/message-id/12553.1135634231@sss.pgh.pa.us#:~:text=A%20bitmap%20scan,said%20ORDER%20BY.

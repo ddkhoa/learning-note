@@ -1,7 +1,7 @@
 # Learning note: VACUUM and REINDEX
 
 ## Introduction
-As shown in [Multi Version Concurrency Control](./index_scan.md#multi-version-concurrency-control), PostgresSQL doesn't deleted physically the row but just marked it invisible for future transactions. There are several downsides of this approach:
+As shown in [Multi Version Concurrency Control](../index/index_scan.md#multi-version-concurrency-control), PostgresSQL doesn't deleted physically the row but just marked it invisible for future transactions. There are several downsides of this approach:
 
 1. Overtime, dead rows cummulate and occupy a non negliable part in the disk. This is true for both heap space and index space.
 
