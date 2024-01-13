@@ -3,16 +3,16 @@
 ## Introduction
 As shown in [Multi Version Concurrency Control](../index/index_scan.md#multi-version-concurrency-control), PostgresSQL doesn't deleted physically the row but just marked it invisible for future transactions. There are several downsides of this approach:
 
-1. Overtime, dead rows cummulate and occupy a non negliable part in the disk. This is true for both heap space and index space.
+1. Overtime, dead rows cumulate and occupy a non negligible part in the disk. This is true for both heap space and index space.
 
 2. Dead tuples slow down queries. 
 - For sequential scan, PG must scan all tuples, including dead ones.
-- For index scan, the time to traverse the index tree is longer. In addition, PG might encounter index tuples pointing to dead rows. It this case, PG does some/many heap fetches uncessarily.
+- For index scan, the time to traverse the index tree is longer. In addition, PG might encounter index tuples pointing to dead rows. It this case, PG does some/many heap fetches unnecessarily.
 
-Therefore, **clean up the database regularly is required to have a stable performance. If you're charging by disk comsumption, this can also help you to save money**. PostgresSQL provides some commands allow to clean up the heap space and index space. In this note, we will examine 2 commands: `VACUUM` and `REINDEX`.
+Therefore, **clean up the database regularly is required to have a stable performance. If you're charging by disk consumption, this can also help you to save money**. PostgresSQL provides some commands allow to clean up the heap space and index space. In this note, we will examine 2 commands: `VACUUM` and `REINDEX`.
 
 ## VACUUM
-In the most basic form, VACUUM command removes obsolete rows of a table. The space previously occcupied by obsolete rows is now free and can be reused by the same table.
+In the most basic form, VACUUM command removes obsolete rows of a table. The space previously occupied by obsolete rows is now free and can be reused by the same table.
 
 It's important to know that in most cases, **the free space claimed by normal VACUUM process is not returned to the OS**. The table size remains the same after running VACUUM commands. 
 The exception is when all obsolete rows are **at the end of the table**, Postgres truncate off any empty pages occupied by those rows and return disk space to the OS.
@@ -37,7 +37,7 @@ In both scenarios, the table's size did not change after the `DELETE` command. A
 
 In the scenario of deleting rows in the middle of the table: 
   - The table's size did not change after the `VACUUM` command. As vacuum process doesn't return free space to the OS.
-  - The table's size did not change after the `INSERT` command. As new rows will be stored in freespace claimed by vacuum process.
+  - The table's size did not change after the `INSERT` command. As new rows will be stored in free space claimed by vacuum process.
   
 In the scenario of deleting rows at the end of the table:
   - The table's size decreased after the `VACUUM` command. As VACUUM command truncated empty pages at the end of the table and return disk space to the OS.
@@ -74,7 +74,7 @@ In both scenarios, the index size did not change after the `VACUUM` command. Vac
 
 In both scenarios, the index size increased after inserting data to the table.
 > <u>Question zone</u>
-> 1. When reinserting the previously deleted data into the table, the index size increased **more** than inserting new data. WHY? Does PostgresSQL reuse freespace to store new tuples in index space like it does with heap space?
+> 1. When reinserting the previously deleted data into the table, the index size increased **more** than inserting new data. WHY? Does PostgresSQL reuse free space to store new tuples in index space like it does with heap space?
 
 ### AUTO VACUUM
 Vacuum regularly is important for production databases. Therefore, PostgresSQL provides the capability to automatically run vacuum process if some conditions are met. There are some parameters that determine when the vacuum process should be triggered.

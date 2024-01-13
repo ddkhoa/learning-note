@@ -3,7 +3,7 @@
 ### Multi Version Concurrency Control
 Postgres allow many transactions to run concurrently. Concurrent transactions can be isolated in different levels.
 
-When the isolation level is Repeatable Read, SELECT queries inside a transaction always see the same data. If another transaction commits its changes between 2 select queries, the 2nd select doesn't see the modification <sup>1</sup>. To support this isolation level, PG allows queries to see a snapshot of the database at a specific point in time, regarless of the current state.
+When the isolation level is Repeatable Read, SELECT queries inside a transaction always see the same data. If another transaction commits its changes between 2 select queries, the 2nd select doesn't see the modification <sup>1</sup>. To support this isolation level, PG allows queries to see a snapshot of the database at a specific point in time, regardless of the current state.
 
   
 When a row is updated, it is not updated in place. Instead:
@@ -21,7 +21,7 @@ Index contains **pointers** to the actual rows in the table. Pointers are organi
 
 In Index Scan, PostgresSQL visits the index first. **Each time a match found, PG visits the table data to get the row** <sup>3</sup>.
   - PG contains one entry in index per *row version*. **A row might have many entries in index that point to it <sup>4</sup>.** 
-  - When accessing table data, PostgresSQL checks if the row is visibile for the current query.
+  - When accessing table data, PostgresSQL checks if the row is visible for the current query.
 
 ### Bitmap Index Scan & Bitmap Heap Scan
 PostgresSQL visits the index first and **only once** to get all relevant index entries. It then builds a bitmap contains all matches.
@@ -39,7 +39,7 @@ In both cases, PostgreSQL checks if the row is visible for the current transacti
 
 
 ### Index Only Scan
-PostgresSQL visits the index to get rows that satisfy the condition. For each index entry that maches the condition, PG checks if the row is visible for the current query. If it is the case, the rows is qualified without table access. 
+PostgresSQL visits the index to get rows that satisfy the condition. For each index entry that matches the condition, PG checks if the row is visible for the current query. If it is the case, the rows is qualified without table access. 
 
 Visibility information is not stored in index data but only in table data and the Visibility Map.
 
@@ -60,7 +60,7 @@ We can resume the description of each index scan types in this schema
 ### How PostgresSQL chooses a scan type
 Index Only Scan operation can only be used when all the selected columns are included in the index. For other scan operations, PostgresSQL evaluates the execution cost and picks the most efficient way.
 
-PostgresSQL models the cost of data access and processsing using a [set of parameters](https://www.postgresql.org/docs/current/runtime-config-query.html#RUNTIME-CONFIG-QUERY-CONSTANTS). In its most basic form, we can apply the following rule of thumb:
+PostgresSQL models the cost of data access and processing using a [set of parameters](https://www.postgresql.org/docs/current/runtime-config-query.html#RUNTIME-CONFIG-QUERY-CONSTANTS). In its most basic form, we can apply the following rule of thumb:
 - If the query select only a few rows in the table, Index Scan is the most optimized method.
 - If the query select a fraction of a table, Bitmap Scan Index will be used.
 - If the query select most of the table's rows, Seq Scan will be used.
@@ -99,12 +99,12 @@ As we'll explore how PostgresSQL uses index, we get the number of rows and disti
 ```sql
 SELECT
     count(*) nb_rows,
-    count(DISTINCT (person_id)) nb_distict_person_id
+    count(DISTINCT (person_id)) nb_distinct_person_id
 FROM
     aka_name
 ```
 
-| nb_rows | nb_distict_person_id |
+| nb_rows | nb_distinct_person_id |
 |---------|----------------------|
 |  901343 |               588222 |
 
