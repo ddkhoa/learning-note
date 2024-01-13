@@ -179,6 +179,7 @@ experimentation_vacuum(where_to_delete="middle")
 experimentation_vacuum(where_to_delete="end")
 
 experimentation_vacuum_index_cleanup_delete_rows(reinsert_same_data=True)
+experimentation_vacuum_index_cleanup_delete_rows(reinsert_same_data=False)
 experimentation_vacuum_index_cleanup_update_rows()
 
 experimentation_reindex()
