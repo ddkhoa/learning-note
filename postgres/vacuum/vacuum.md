@@ -7,7 +7,7 @@ As shown in [Multi Version Concurrency Control](../index/index_scan.md#multi-ver
 
 2. Dead tuples slow down queries. 
 - For sequential scan, PG must scan all tuples, including dead ones.
-- For index scan, the time to traverse the index tree is longer. In addition, PG might encounter index tuples pointing to dead rows. It this case, PG does some/many heap fetches unnecessarily.
+- For index scan, the time to traverse the index tree is longer. In addition, PG might encounter index tuples pointing to dead rows. It this case, PG does some/many heap fetches unnecessarily <sup>1</sup>.
 
 Therefore, **clean up the database regularly is required to have a stable performance. If you're charging by disk consumption, this can also help you to save money**. PostgresSQL provides some commands allow to clean up the heap space and index space. In this note, we will examine 2 commands: `VACUUM` and `REINDEX`.
 
@@ -118,3 +118,6 @@ The index size is reduced after running `REINDEX` command.
 > <u>Question zone </u>
 >
 > In the test, I reinsert the previously deleted data. The index size is greater than it was before deleting data. The delta is even greater than when using `VACUUM` command with `INDEX_CLEANUP`. WHY?
+
+
+[1] In fact, Postgres implemented an optimization for this situation. When visiting a heap tuple, if PG discover that the tuple is obsolete, it will mark the corresponding index tuple as obsolete as well. So in subsequent queries, PG doesn't need to revisit the heap tuple. [Reference](https://www.cybertec-postgresql.com/en/killed-index-tuples/)
