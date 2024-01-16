@@ -1,4 +1,8 @@
 # Learning note: PostgresSQL Scan Types
+
+## Purpose
+The purpose of this note is to explain what PostgresSQL does behind the scenes for each type of scan. This allows us to better understand the execution plan and determine whether it is good or not.
+
 ## Prerequisites
 ### Multi Version Concurrency Control
 Postgres allow many transactions to run concurrently. Concurrent transactions can be isolated in different levels.
