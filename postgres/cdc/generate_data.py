@@ -74,18 +74,21 @@ def generate_csv(
 
     for i in range(1, nb_versions):
         if i > 1:
+            # we have a bug when use len(current_df.index)
+            # read df from file in each iteration to avoid the bug
             current_df = pd.read_csv(
                 f"data/{scenario}/order_{market_id}_{year_month}_updated_{i-1}.csv",
                 parse_dates=[2],
             )
         for _ in range(changed_orders):
-            # we have a bug if use len(current_df.index)
             changed_rows = random.randrange(len(current_df.index))
-            new_value = random.randint(100, 10000)
+            new_price = random.randint(100, 10000)
+            new_nb_items = random.randint(1, 20)
             print_log(
-                f"Update price of rows {changed_rows} to {new_value}. Length current_df: {len(current_df.index)}"
+                f"Update rows {changed_rows}. Price: {new_price}, nb_items: {new_nb_items}. Length current_df: {len(current_df.index)}"
             )
-            current_df.loc[changed_rows, "total_price"] = new_value
+            current_df.loc[changed_rows, "total_price"] = new_price
+            current_df.loc[changed_rows, "nb_items"] = new_nb_items
 
         list_new_orders = []
         for _ in range(new_orders):
@@ -154,19 +157,19 @@ def end_of_month(date: datetime) -> datetime:
 # load_data()
 
 # low_diff_ratio: (500 + 90) / 93000= 0.006344
-# generate_csv(
-#     "low_diff_ratio", "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c", "2024-01", 15, 500, 90
-# )
+generate_csv(
+    "low_diff_ratio", "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c", "2024-01", 15, 500, 90
+)
 
 # medium_diff_ratio: (10000 + 8600) / 93000 = 0.2
-# generate_csv(
-#     "medium_diff_ratio",
-#     "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c",
-#     "2024-01",
-#     15,
-#     10000,
-#     8600,
-# )
+generate_csv(
+    "medium_diff_ratio",
+    "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c",
+    "2024-01",
+    15,
+    10000,
+    8600,
+)
 
 # high_diff_ratio: (22000 + 47750) / 93000 = 0,75
 generate_csv(

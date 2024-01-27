@@ -123,12 +123,12 @@ To compare the performance of 2 methods, we use the following metrics:
 ![Dead tuples](./result/high_diff_ratio/dead_tuples.png "Dead tuples")
 
 
-In all scenarios, incremental update method prove its efficiency in all metrics:
-- The time to update data is faster.
-- Heap size, index size and number of dead rows increase less than update-by-replace method
+In all scenarios, the incremental update method prove its efficiency in all metrics:
+- This method update data faster than the update-by-replace method in most attempts, except the first one.
+  - For the first update, the fingerprint calculation added overhead while the only thing to do is to add all data in the temporary table into the final table.
 
-We also notice that:
-- In medium and high diff ratio, the execution time of update-by-replace method increase rapidly and the index size increase faster than linearly.
-- Only at the last update in the high diff scenario, the heap size remains unchanged. At that moment, VACUUM process already reclaimed disk space occupied by dead rows. So Postgres can reuse this space. But, it is too late. We lost 350MB compared to incremental update method.
-> In the system with a lot of UPDATE/DELETE queries, VACUUM process might not catch up the update part. Resulting lot of space is wasted.
-- In the low diff ratio, incremental update process does not trigger VACUUM. Because the number of inserted and deleted rows are very low.
+- Heap size, index size and number of dead rows increase slower than in the update-by-replace method.
+  - When using the incremental update method, these 3 metrics increased steadily. When using update-by-replace method, the heap size increased linearly and the index size increased even faster.
+  - Because the number of inserted and deleted rows are lower, the incremental update method triggers VACUUM later than the update-by-replace method.
+
+The incremental update method, as is implemented in this example, is the most basic version to demonstrate the concept. We can improve it further to archive better performance. For example, after loading data into the final table, we can export the data with fingerprint column to a file. In the next update, we can read data from that file and skip the fingerprint computation step.

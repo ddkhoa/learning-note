@@ -184,9 +184,9 @@ def clone_table(connection, source_table, target_table):
     connection.commit()
 
 
-# test_update_data(scenario="low_diff_ratio", method="replace")
-# test_update_data(scenario="low_diff_ratio", method="incremental")
-# test_update_data(scenario="medium_diff_ratio", method="replace")
-# test_update_data(scenario="medium_diff_ratio", method="incremental")
+test_update_data(scenario="low_diff_ratio", method="replace")
+test_update_data(scenario="low_diff_ratio", method="incremental")
+test_update_data(scenario="medium_diff_ratio", method="replace")
+test_update_data(scenario="medium_diff_ratio", method="incremental")
 test_update_data(scenario="high_diff_ratio", method="replace")
 test_update_data(scenario="high_diff_ratio", method="incremental")

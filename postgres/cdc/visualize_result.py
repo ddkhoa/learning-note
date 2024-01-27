@@ -13,8 +13,7 @@ from matplotlib.ticker import FuncFormatter
 
 # Function to format y-axis ticks without scientific notation
 def format_y_ticks(value, pos):
-    # '{:.0f}' formats the value with zero decimal places
-    return "{:.0f}".format(value)
+    return "{:.2f}".format(value)
 
 
 def draw_chart(
@@ -30,9 +29,11 @@ def draw_chart(
     df_incremental["accumulated_heap"] = df_incremental["heap_size_changed"].cumsum()
     df_incremental["accumulated_index"] = df_incremental["index_size_changed"].cumsum()
 
-    df_replace["accumulated_index"] = df_replace["accumulated_index"] / (1024)
+    df_replace["accumulated_index"] = df_replace["accumulated_index"] / (1024 * 1024)
     df_replace["accumulated_heap"] = df_replace["accumulated_heap"] / (1024 * 1024)
-    df_incremental["accumulated_index"] = df_incremental["accumulated_index"] / (1024)
+    df_incremental["accumulated_index"] = df_incremental["accumulated_index"] / (
+        1024 * 1024
+    )
     df_incremental["accumulated_heap"] = df_incremental["accumulated_heap"] / (
         1024 * 1024
     )
@@ -76,7 +77,7 @@ def draw_chart(
         data=combined_df, x="nth_update", y="accumulated_index", hue="group", marker="o"
     )
     plt.xlabel("nth update")
-    plt.ylabel("Index size changed (KB)")
+    plt.ylabel("Index size changed (MB)")
     plt.gca().get_yaxis().set_major_formatter(FuncFormatter(format_y_ticks))
     plt.title("Index size change")
     sns.move_legend(index_size_chart, "upper center")
@@ -99,5 +100,6 @@ def draw_chart(
     plt.clf()
 
 
+draw_chart("low_diff_ratio")
 draw_chart("medium_diff_ratio")
 draw_chart("high_diff_ratio")
