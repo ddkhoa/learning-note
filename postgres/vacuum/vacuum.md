@@ -105,6 +105,7 @@ To reduce the size of index, we can run the `REINDEX` command. This command recr
 
 We can observe the effect of REINDEX command by the following experimentation:
 - Create a table
+- Disable AUTOVACUUM mode for the table
 - Insert 100000 rows
 - Create an index on the table
 - Capture the index size of the table
@@ -112,12 +113,14 @@ We can observe the effect of REINDEX command by the following experimentation:
 - Capture the index size of the table
 - Run the REINDEX command
 - Capture the index size of the table
+- Insert 50000 rows
+- Capture the index size of the table
 
 The index size is reduced after running `REINDEX` command. 
 
 > <u>Question zone </u>
 >
-> In the test, I reinsert the previously deleted data. The index size is greater than it was before deleting data. The delta is even greater than when using `VACUUM` command with `INDEX_CLEANUP`. WHY?
+> In the test, I reinsert the previously deleted data. The index size is greater than it was before deleting data. WHY?
 
 
 [1] In fact, Postgres implemented an optimization for this situation. When visiting a heap tuple, if PG discover that the tuple is obsolete, it will mark the corresponding index tuple as obsolete as well. So in subsequent queries, PG doesn't need to revisit the heap tuple. [Reference](https://www.cybertec-postgresql.com/en/killed-index-tuples/)
