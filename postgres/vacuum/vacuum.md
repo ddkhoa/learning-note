@@ -31,7 +31,9 @@ We can verify the statement above by doing the following experimentation:
 - Insert 10000 rows
 - Capture the heap size of the table
 
-I ran the experimentation in 2 scenarios: delete rows in the middle of the table and at the end of the table. 
+I ran the experimentation in 2 scenarios: delete rows in the middle of the table and at the end of the table. The evolution of the table size is visualized by the following chart:
+
+![Table size evolution during VACUUM process](./result/Table%20size%20evolution%20during%20VACUUM%20process.png "Table size evolution during VACUUM process")
 
 In both scenarios, the table's size did not change after the `DELETE` command. As deleted rows still present physically in the disk.
 
@@ -116,7 +118,11 @@ We can observe the effect of REINDEX command by the following experimentation:
 - Insert 50000 rows
 - Capture the index size of the table
 
-The index size is reduced after running `REINDEX` command. 
+The index size is reduced after running `REINDEX` command.
+
+The following chart illustrate the evolution of the index size during VACUUM and REINDEX process.
+
+![Index evolution during VACUUM & REINDEX process](./result/Index%20size%20evolution%20during%20VACUUM%20&%20REINDEX%20process.png "Index size evolution during VACUUM & REINDEX process")
 
 > <u>Question zone </u>
 >

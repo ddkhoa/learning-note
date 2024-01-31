@@ -232,7 +232,7 @@ table_size_delete_middle = experimentation_vacuum(where_to_delete="middle")
 table_size_delete_end = experimentation_vacuum(where_to_delete="end")
 draw_chart(
     "Table size evolution during VACUUM process",
-    "bar",
+    "line",
     [
         "Delete rows at the middle",
         "Delete rows at the end",
