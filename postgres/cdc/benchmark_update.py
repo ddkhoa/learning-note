@@ -144,27 +144,23 @@ def test_update_data(
             load_data_to_tmp_table(engine, tmp_table, files[i])
 
             before = capture_stats(connection, test_table, "before")
+            if i == 0:
+                stats.append(
+                    {
+                        "heap_size": before["heap_size"],
+                        "index_size": before["index_size"],
+                        "n_dead_tuples": before["n_dead_tuples"],
+                    }
+                )
             func(connection, test_table, tmp_table)
             after = capture_stats(connection, test_table, "after")
 
             stats.append(
                 {
-                    "run_at": before["current_time"],
                     "exec_time": after["current_time"] - before["current_time"],
-                    "heap_size_changed": after["heap_size"] - before["heap_size"],
-                    "index_size_changed": after["index_size"] - before["index_size"],
-                    "n_live_tuples_changed": after["n_live_tuples"]
-                    - before["n_live_tuples"],
-                    "n_dead_tuples_changed": after["n_dead_tuples"]
-                    - before["n_dead_tuples"],
-                    "n_tuples_inserted": after["n_tuples_inserted"]
-                    - before["n_tuples_inserted"],
-                    "n_tuples_updated": after["n_tuples_updated"]
-                    - before["n_tuples_updated"],
-                    "n_tuples_hot_updated": after["n_tuples_hot_updated"]
-                    - before["n_tuples_hot_updated"],
-                    "n_tuples_deleted": after["n_tuples_deleted"]
-                    - before["n_tuples_deleted"],
+                    "heap_size": after["heap_size"],
+                    "index_size": after["index_size"],
+                    "n_dead_tuples": after["n_dead_tuples"],
                 }
             )
 
