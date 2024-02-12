@@ -41,49 +41,49 @@ In PG, the term of `cost` refers to a number in an arbitrary unit, that indicate
 
 #### Sequential Scan cost
 Sequential scan cost consists of CPU cost and IO cost
-$$sequential_scan_cost = seq_cpu_cost + seq_IO_cost$$
+$$sequential\\_scan\\_cost = seq\\_cpu\\_cost + seq\\_IO\\_cost$$
 
 In a sequential scan, PG must visit all the pages and check all the tuples against the conditions.
-$$seq_cpu_cost = (cpu_tuple_cost + nb_operators_in_query * cpu_operator_cost) * n_tuples$$
+$$seq\\_cpu\\_cost = (cpu\\_tuple\\_cost + nb\\_operators\\_in\\_query * cpu\\_operator\\_cost) * n\\_tuples$$
 
 Heap pages read are sequential.
-$$seq_IO_cost = seq_page_cost * n_pages$$
+$$seq\\_IO\\_cost = seq\\_page\\_cost * n\\_pages$$
 
-$$sequential_scan_cost = (0.01 + nb_operators_in_query * 0.0025) * n_tuples + n_pages$$
+$$sequential\\_scan\\_cost = (0.01 + nb\\_operators\\_in\\_query * 0.0025) * n\\_tuples + n\\_pages$$
 
-Given a query on a table, `nb_operators_in_query`, `n_pages` and `n_tuples` are constants, so sequential_scan_cost is also a constant. It doesn't depend on the number of rows we want to retrieve.
+Given a query on a table, `nb_operators_in_query`, `n_pages` and `n_tuples` are constants, so `sequential_scan_cost` is also a constant. It doesn't depend on the number of rows we want to retrieve.
 
 #### Index Scan cost
 In an index scan, there are 2 steps: visit the index space and the heap space:
-$$index_scan_cost = index_cost + table_cost$$
+$$index\\_scan\\_cost = index\\_cost + table\\_cost$$
 
 Each stage has it own cpu cost and IO cost:
-$$index_cost = index_cpu_cost + index_IO_cost$$
-$$table_cost = table_cpu_cost + table_IO_cost$$
+$$index\\_cost = index\\_cpu\\_cost + index\\_IO\\_cost$$
+$$table\\_cost = table\\_cpu\\_cost + table\\_IO\\_cost$$
 
 Index CPU cost consists of the cost to traverse the tree to find relevant index tuples and the cost to process those tuples[1]:
-$$index_cpu_cost = tree_traversal_cost + (cpu_index_tuple_cost + cpu_operator_cost) * n_index_tuples_read$$ 
+$$index\\_cpu\\_cost = tree\\_traversal\\_cost + (cpu\\_index\\_tuple\\_cost + cpu\\_operator\\_cost) * n\\_index\\_tuples\\_read$$ 
 
 [@TODO]
-$$tree_traversal_cost = ceil(log(n_index_tuples)/log(2)) * cpu_operator_cost + 50 * cpu_operator_cost * (tree_height + 1)$$ 
+$$tree\\_traversal\\_cost = ceil(log(n\\_index\\_tuples)/log(2)) * cpu\\_operator\\_cost + 50 * cpu\\_operator\\_cost * (tree\\_height + 1)$$ 
 
 [@TODO]
-$$n_index_tuples_read = S * n_index_tuples$$ 
+$$n\\_index\\_tuples\\_read = S * n\\_index\\_tuples$$ 
 
 
-$$index_cpu_cost = ceil(log(n_index_tuples)/log(2)) * 0.0025 + 0.125 * tree_height + 0.125 + 0.0075 * S * n_index_tuples$$
+$$index\\_cpu\\_cost = ceil(log(n\\_index\\_tuples)/log(2)) * 0.0025 + 0.125 * tree\\_height + 0.125 + 0.0075 * S * n\\_index\\_tuples$$
 
 
 Index pages are read randomly 
-$$index_IO_cost = random_page_cost * n_index_pages_fetched$$
+$$index\\_IO\\_cost = random\\_page\\_cost * n\\_index\\_pages\\_fetched$$
 
 Same as above
-$$n_index_pages_fetched = S * n_index_pages$$
+$$n\\_index\\_pages\\_fetched = S * n\\_index\\_pages$$
 
-$$index_IO_cost = 4 * S * n_index_pages$$
+$$index\\_IO\\_cost = 4 * S * n\\_index\\_pages$$
 
 
-$$index_cost = ceil(log(n_index_tuples)/log(2)) * 0.0025 + 0.125 * tree_height + 0.125 + 0.0075 * S * n_index_tuples + 4 *  S * n_index_pages$$
+$$index\\_cost = ceil(log(n\\_index\\_tuples)/log(2)) * 0.0025 + 0.125 * tree\\_height + 0.125 + 0.0075 * S * n\\_index\\_tuples + 4 *  S * n\\_index\\_pages$$
 
 In case of n_index_tuples is large:
 - `log(n_index_tuples) << n_index_tuples`.
@@ -91,13 +91,13 @@ In case of n_index_tuples is large:
 - `n_index_pages = k * n_index_tuples` (k < 1). We keep n_index_pages in the equation.
 
 The index cost formula can be simplified as: 
-$$index_cost = 0.0075 * S * n_index_tuples + 4 * S * n_index_pages$$
+$$index\\_cost = 0.0075 * S * n\\_index\\_tuples + 4 * S * n\\_index\\_pages$$
 
 
-$$table_cpu_cost =  (cpu_tuple_cost + cpu_operator_cost) * n_tuples_fetched$$
+$$table\\_cpu\\_cost =  (cpu\\_tuple\\_cost + cpu\\_operator\\_cost) * n\\_tuples\\_fetched$$
 
-$$n_tuples_fetched = S * n_tuples$$
-$$table_cpu_cost = 0.0125 * S * n_tuples$$
+$$n\\_tuples\\_fetched = S * n\\_tuples$$
+$$table\\_cpu\\_cost = 0.0125 * S * n\\_tuples$$
 
 To estimate table_IO_cost, we consider a new notion: Index Correlation. It indicates the similarity between the logical order of index entries and the physical order of corresponds heap entries. The range of index correlation values is [-1, 1]. The value 1 means index entries and heap entries are in the same order. The value -1 means they are in inverted order. When this value is 0, there are no correlation at all between them.
 
@@ -105,8 +105,8 @@ To estimate table_IO_cost, we consider a new notion: Index Correlation. It indic
 
 In case of high correlation, the order of index entries and heap entries totally match. Then the first heap visit is random, but all subsequent reads are sequential. In addition, the number of heap pages to read is the fraction of the table identified by index_selectivity.
 
-$$table_IO_cost_best_case = random_page_cost + seq_page_cost * (S * n_pages - 1)$$
-$$table_IO_cost_best_case = 3  + S * n_pages$$
+$$table\\_IO\\_cost\\_best\\_case = random\\_page\\_cost + seq\\_page\\_cost * (S * n\\_pages - 1)$$
+$$table\\_IO\\_cost\\_best\\_case = 3  + S * n\\_pages$$
 
 **Worst case**
 
@@ -142,51 +142,7 @@ In this scenario, we replace N by k * T
 - When we use a higher value of s (0.1), we notice a "break" in the graph. When table size exceeds cache size, the velocity of PF increase more quickly than before.
 
 We interested in the relation between PF and s. Then the IO cost in the worst case is compute like following:
-$$table_IO_cost_worst_case = 4 * PF$$
-
-
-
-
-
-
-## Page fetched estimation
-
-index_pages_fetched function from Postgres source code
-
-```C++
- * We use an approximation proposed by Mackert and Lohman, "Index Scans
- * Using a Finite LRU Buffer: A Validated I/O Model", ACM Transactions
- * on Database Systems, Vol. 14, No. 3, September 1989, Pages 401-424.
- * The Mackert and Lohman approximation is that the number of pages
- * fetched is
- *	PF =
-    *		min(2TNs/(2T+Ns), T)			when T <= b
-    *		2TNs/(2T+Ns)					when T > b and Ns <= 2Tb/(2T-b)
-    *		b + (Ns - 2Tb/(2T-b))*(T-b)/T	when T > b and Ns > 2Tb/(2T-b)
-```
-
-We play with the function to get the insight.
-
-**Fixed T, N, and b. Find the relation between PF and s**
-- When T <= b, PF increase quickly, then it is bounded by T.
-- When T > b, PF still increase quickly, then when s exceeds the threshold 2Tb/N*(2T-b), PF increase linearly regards to s.
-
-In both cases, PF is very sensitive to s.
-
-**Fixed T, N and s. Find the relation between PF and b**
-- Of course, when the cache size increase, the number of PF decrease. If PG found a page in cache, the no page fetched from disk is needed.
-
-**Fixed b and s. Find the relation between PF and T**
-
-In this scenario, we replace N by k * T
-- For small s (0.01), PF increase linearly to T.
-- When we use a higher value of s (0.1), we notice a "break" in the graph. When table size exceeds cache size, the velocity of PF increase more quickly than before.
-
-
-
-
-
-
+$$table\\_IO\\_cost\\_worst\\_case = 4 * PF$$
 
 
 ## Cluster
