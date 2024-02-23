@@ -3,12 +3,11 @@ When it comes to query performance, indexes are commonly referred to as the magi
 In this article, we will look at the Index Scan operation in Postgres.
 - Explain why the index is fast in certain situations
 - The scenario in which index doesn't perform as good as we imagine
-- Additional operation to improve index scan
 
 This article only examine BTREE indexes.
 
 # Sequential Scan & Index Scan
-To understand why index scan is fast, we use Sequential Scan operation as the baseline. Sequential Scan operation is the default option of Postgres if no indexes are available.
+To understand why index scan is fast, we use Sequential Scan operation as the baseline. Sequential Scan operation is the default option of Postgres when faster scan modes aren't applicable.
 
 ## First insight
 First, we examine the procedure of Sequential Scan and Index Scan operation.
@@ -22,7 +21,7 @@ By comparing these two procedures, we can gain the first insight into index scan
 
 However, this is a qualitative statement. What if the number of blocks identified by index is important?
 
-We need a quantitative analysis. PG has a sophisticated system to evaluate the cost of an execution plan. Higher costs lead to slower the operations. We will compare the cost of sequential scan and index scan.
+We would like to compare the speed of Sequential scan and Index Scan using a quantitative analysis. Such comparison is really challenging given the variety of parameters and hardware options. PG has a sophisticated mechanism to evaluate the cost of an execution plan. Although the system is not an exact representation of reality, it "should be" a reliable source to measure the performance of each scan type.
 
 ## Quantitative analysis
 
@@ -46,7 +45,7 @@ In the following calculation, we use:
 - n refers to the number of tuples in the index
 - b refers to the number of pages in the cache (both Postgres and OS)
 
-We assume there is 1 condition in the query.
+//We assume there is 1 condition in the query.
 
 ### Sequential Scan cost
 
@@ -160,6 +159,8 @@ In case of low correlation, PG use an approximation of number page to fetch
     *		b = # buffer pages available (we include kernel space here)
 ```
 
+- when T <= b
+$$table\\_IO\\_cost\\_worst\\_case = 4 * PF  = 4 * min(2TNs/(2T+Ns), T)$$
 
 - when T > b and Ns <= 2Tb/(2T-b)
 $$table\\_IO\\_cost\\_worst\\_case = 4 * PF  = 8TNs/(2T+Ns)$$
@@ -168,21 +169,37 @@ $$table\\_IO\\_cost\\_worst\\_case = 4 * PF  = 8TNs/(2T+Ns)$$
 $$table\\_IO\\_cost\\_worst\\_case = 4(b + (Ns - 2Tb/(2T-b))*(T-b)/T)$$
 
 For other cases, the cost is computed as prorated between the worst and the best case using C<sup>2</sup>.
-The cost of index size depends on many parameters. We consider some scenarios where T, N, b, t, n are constants (given a table and a server). We draw a graph that illustrates this relation between the cost and `s`:
 
-#### Scenario 1: The table size is smaller than the cache size
-#### Scenario 2: The table size is bigger than the cache size
+
+### Visualization
+The cost of index size depends on many parameters. We consider some scenarios where T, N, b, t, n are constants (given a table and a server). We draw a graph that illustrates this relation between the index cost and `s`:
+
+#### Scenario 1: The table size is smaller than the cache size (T <= b)
+
 ```
-T = 600000
-N = 54000000
+T = 179509
+N = 10950049
 b = 524288
-t = 344018
-n = 54000000
+t = 102924
+n = 10950049
+```
+
+![Seq & Index cost](cost_table_fit_cache.png)
+
+#### Scenario 2: The table size is bigger than the cache size (T > b)
+```
+T = 179509
+N = 10950049
+b = 131072
+t = 102924
+n = 10950049
 ```
 
 ![Seq & Index cost](cost_table_bigger_cache.png)
 
-## Cluster
+#### Discussion
+- Index cost is smaller than sequential cost when s is near 0: index improve performance when it determines only a few row.
+- With cache or without cache, the difference between the worst and the best index cost is significant. 
+- In the worst case, the index cost increases extremely fast when s increases. The query only need to targets more than about 2% number of rows in the table to trigger a full table scan.
 
 ## Conclusion
-Pattern: Search many elements by index on a large table

@@ -42,12 +42,13 @@ def get_plot_by_table_size(func, xT, xN, s, b):
     plt.show()
 
 
-def get_plot_seq_index(xs, T, N, b, t, n):
+def get_plot_seq_index(xs, T, N, b, t, n, scenario):
     seqcosts = []
     for _ in xs:
         seqcosts.append(0.0125 * N + T)
     seqcosts = np.array(seqcosts)
-    plt.plot(xs, seqcosts)
+    plt.figure(figsize=(12, 6))
+    plt.plot(xs, seqcosts, label="seq_scan")
 
     indexcosts_best = []
     indexcosts_worst = []
@@ -57,7 +58,11 @@ def get_plot_seq_index(xs, T, N, b, t, n):
         table_space_cost_best = 0.0125 * s * N + s * T
         indexcosts_best.append(index_space_cost + table_space_cost_best)
 
-        if s <= 2 * T * b / (N * (2 * T - b)):
+        if T <= b:
+            a = 2 * T * N * s / (2 * T + N * s)
+            table_space_cost_worst = 4 * min(a, T)
+
+        elif s <= 2 * T * b / (N * (2 * T - b)):
             table_space_cost_worst = 8 * T * N * s / (2 * T + N * s)
         else:
             table_space_cost_worst = 4 * (
@@ -65,18 +70,21 @@ def get_plot_seq_index(xs, T, N, b, t, n):
             )
         indexcosts_worst.append(index_space_cost + table_space_cost_worst)
 
-    plt.plot(xs, indexcosts_best)
-    plt.plot(xs, indexcosts_worst)
-    plt.savefig("./cost.png")
+    plt.plot(xs, indexcosts_best, label="index_scan_best_case")
+    plt.plot(xs, indexcosts_worst, label="index_scan_worst_case")
+    plt.xlabel("Selectivity")
+    plt.ylabel("Cost")
+    plt.legend()
+    plt.savefig(f"./cost_{scenario}.png")
 
 
 xs = np.arange(0, 1, 0.01)
-T = 600000
-N = 54000000
-b = 524288
-t = 344018
-n = 54000000
-get_plot_seq_index(xs, T, N, b, t, n)
+T = 179509
+N = 10950049
+b = 131072
+t = 102924
+n = 10950049
+get_plot_seq_index(xs, T, N, b, t, n, "table_bigger_cache")
 # get_plot_by_selectivity(page_fetched_worst_case, xs, T, N, b)
 
 # T = 600000
