@@ -44,6 +44,7 @@ In the following calculation, we use:
 - N refers to the number of tuples in the table
 - t refers to the number of pages in the index
 - n refers to the number of tuples in the index
+- b refers to the number of pages in the cache (both Postgres and OS)
 
 We assume there is 1 condition in the query.
 
@@ -82,7 +83,9 @@ The index space visiting cost using BTREE  is computed by 2 functions `genericco
 >
 > In the calculation, we use `s` to refer to `Selectivity`. We have:
 > $$n\\_index\\_tuples\\_read =  s * n\\_index\\_tuples = s * n$$ 
+> 
 > and:
+> 
 > $$ n\\_index\\_pages\\_fetched = s * n\\_index\\_pages = s * t$$
 
 
@@ -95,7 +98,7 @@ $$tree\\_traversal\\_cost = ceil(log(n\\_index\\_tuples)/log(2)) * cpu\\_operato
 So:
 $$index\\_cpu\\_cost = ceil(log(n)/log(2)) * 0.0025 + 0.125 * (tree\\_height + 1) + 0.0075 * s * n$$
 
-As the goal is not to compare the exact value of index cost, but rather to see its evolution, we can remove `log(n)`, `tree_height` and constants from the formula. They tend to be minor compare to  `0.0075 * s * n` when `n` is large.
+As the goal is not to compute the exact value of index cost, but rather to see its evolution, we can remove `log(n)`, `tree_height` and constants from the formula. They tend to be minor compare to  `0.0075 * s * n` when `n` is large.
 
 When it comes to IO, index pages are read randomly: 
 $$index\\_IO\\_cost = random\\_page\\_cost * n\\_index\\_pages\\_fetched = 4 * s * t$$
@@ -116,7 +119,7 @@ We have:
 $$table\\_cpu\\_cost = 0.0125 * s * N$$
 
 
-Table IO cost depends on the number of pages we need to retrieve from PG. This number is computed in `index_pages_fetched` function located in `postgres/private/postgres/src/backend/optimizer/path/costsize.c`. It depends on a new factor: `Index Correlation`
+Table IO cost depends on the number of pages we need to retrieve from PG. This number is computed in `index_pages_fetched` function located in `/src/backend/optimizer/path/costsize.c`. It depends on a new factor: `Index Correlation`
 
 > **Index Correlation**
 >
@@ -129,7 +132,7 @@ There are 3 situations
 
 **Best case**
 
-In case of high correlation, the order of index entries and heap entries totally match. The first heap visit is random, but all subsequent reads are sequential. In addition, the number of heap pages to read is the fraction of the table identified by Selectivity.
+In case of high correlation, the order of index entries and heap entries totally match. The number of heap pages to read is the fraction of the table identified by Selectivity.  In addition, the first heap visit is random, but all subsequent reads are sequential.
 
 $$table\\_IO\\_cost\\_best\\_case = random\\_page\\_cost + seq\\_page\\_cost * (s * n\\_pages - 1)$$
 
@@ -150,6 +153,11 @@ In case of low correlation, PG use an approximation of number page to fetch
     *		min(2TNs/(2T+Ns), T)			when T <= b
     *		2TNs/(2T+Ns)					when T > b and Ns <= 2Tb/(2T-b)
     *		b + (Ns - 2Tb/(2T-b))*(T-b)/T	when T > b and Ns > 2Tb/(2T-b)
+    * where
+    *		T = # pages in table
+    *		N = # tuples in table
+    *		s = selectivity = fraction of table to be scanned
+    *		b = # buffer pages available (we include kernel space here)
 ```
 
 
@@ -160,8 +168,10 @@ $$table\\_IO\\_cost\\_worst\\_case = 4 * PF  = 8TNs/(2T+Ns)$$
 $$table\\_IO\\_cost\\_worst\\_case = 4(b + (Ns - 2Tb/(2T-b))*(T-b)/T)$$
 
 For other cases, the cost is computed as prorated between the worst and the best case using C<sup>2</sup>.
-All the element contribute to the index cost is depend  on `s`, we will draw a graph that illustrate this relation.
-Consider a table with: 
+The cost of index size depends on many parameters. We consider some scenarios where T, N, b, t, n are constants (given a table and a server). We draw a graph that illustrates this relation between the cost and `s`:
+
+#### Scenario 1: The table size is smaller than the cache size
+#### Scenario 2: The table size is bigger than the cache size
 ```
 T = 600000
 N = 54000000
@@ -170,7 +180,7 @@ t = 344018
 n = 54000000
 ```
 
-![Seq & Index cost](cost.png)
+![Seq & Index cost](cost_table_bigger_cache.png)
 
 ## Cluster
 
