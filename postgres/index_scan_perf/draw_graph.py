@@ -79,12 +79,12 @@ def get_plot_seq_index(xs, T, N, b, t, n, scenario):
 
 
 xs = np.arange(0, 1, 0.01)
-T = 179509
-N = 10950049
+T = 252687
+N = 36233108
 b = 131072
-t = 102924
-n = 10950049
-get_plot_seq_index(xs, T, N, b, t, n, "table_bigger_cache")
+t = 30663
+n = 36233108
+get_plot_seq_index(xs, T, N, b, t, n, "table_bigger_cache_2")
 # get_plot_by_selectivity(page_fetched_worst_case, xs, T, N, b)
 
 # T = 600000

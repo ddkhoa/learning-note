@@ -26,7 +26,7 @@ We would like to compare the speed of Sequential scan and Index Scan using a qua
 ## Quantitative analysis
 
 ### Postgres cost constants
-In PG, the term of `cost` refers to a number in an arbitrary unit, that indicates how heavy the operation is. The following are the costs of basic operations in PG:
+In PG, the term of `cost` refers to a number in an arbitrary unit, that indicates how heavy the operation is. The costs of basic operations in PG are given below:
 
 **seq_page_cost**: Cost to fetch a page from disk in a series. Default value is 1.0.
 
@@ -124,7 +124,7 @@ Table IO cost depends on the number of pages we need to retrieve from PG. This n
 >
 >It indicates the similarity between the logical order of index entries and the physical order of corresponds heap entries. The range of index correlation values is [-1, 1]. The value 1 means index entries and heap entries are in the same order. The value -1 means they are in inverted order. When this value is 0, there are no correlation at all between them. In the calculation, we use `C` to refer to Index Correlation.
 
-There are 3 situations
+There are 3 situations:
 - Best case (C = 1 or C = -1)
 - Worst case (C = 0)
 - Normal cases (C is between -1 and 1 but not equals to 0).
@@ -168,7 +168,9 @@ $$table\\_IO\\_cost\\_worst\\_case = 4 * PF  = 8TNs/(2T+Ns)$$
 - when T > b and Ns > 2Tb/(2T-b)
 $$table\\_IO\\_cost\\_worst\\_case = 4(b + (Ns - 2Tb/(2T-b))*(T-b)/T)$$
 
-For other cases, the cost is computed as prorated between the worst and the best case using C<sup>2</sup>.
+For other cases, the cost is computed as pro-rate between the worst and the best case using C<sup>2</sup>.
+
+$$table\\_IO_cost\\ = table\\_IO\\_cost\\_worst\\_case + C^2(table\\_IO\\_cost\\_best\\_case - table\\_IO\\_cost\\_worst\\_case)$$
 
 
 ### Visualization
@@ -176,6 +178,7 @@ The cost of index size depends on many parameters. We consider some scenarios wh
 
 #### Scenario 1: The table size is smaller than the cache size (T <= b)
 
+**Configuration 1**: From table with 10950049 rows. Each row contains 2 varchar columns, 1 timestamp column and 2 integer columns. The index is on the varchar column and is unique. The effective cache size is 4Gb.
 ```
 T = 179509
 N = 10950049
@@ -184,9 +187,25 @@ t = 102924
 n = 10950049
 ```
 
-![Seq & Index cost](cost_table_fit_cache.png)
+![Seq & Index cost](cost_table_fit_cache_1.png)
+
+**Configuration 2**: From table with 36233108 rows. Each row contains 6 integer columns and 1 varchar column. The index is on the integer column and is not unique. The effective cache size is 4Gb.
+```
+T = 252687
+N = 36233108
+b = 524288
+t = 30663
+n = 36233108
+```
+
+![Seq & Index cost](cost_table_fit_cache_2.png)
+
+The pattern is quite the same.
 
 #### Scenario 2: The table size is bigger than the cache size (T > b)
+
+**Configuration 1**: Same as the configuration 1 of the previous scenario. We reduced the effective cache size to only 1Gb.
+
 ```
 T = 179509
 N = 10950049
@@ -197,8 +216,20 @@ n = 10950049
 
 ![Seq & Index cost](cost_table_bigger_cache.png)
 
+**Configuration 2**: Same as the configuration 2 of the previous scenario. We reduced the effective cache size to only 1Gb.
+
+```
+T = 252687
+N = 36233108
+b = 131072
+t = 30663
+n = 36233108
+```
+
+![Seq & Index cost](cost_table_bigger_cache_2.png)
+
 #### Discussion
-- Index cost is smaller than sequential cost when s is near 0: index improve performance when it determines only a few row.
+- Index cost is smaller than sequential cost when s is near 0: **index improve performance when it determines only a few row.**
 - With cache or without cache, the difference between the worst and the best index cost is significant. 
 - In the worst case, the index cost increases extremely fast when s increases. The query only need to targets more than about 2% number of rows in the table to trigger a full table scan.
 
