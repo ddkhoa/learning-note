@@ -42,10 +42,10 @@ def get_plot_by_table_size(func, xT, xN, s, b):
     plt.show()
 
 
-def get_plot_seq_index(xs, T, N, b, t, n, scenario):
+def get_plot_seq_index(xs, T, N, b, t, n, k1, k2, scenario):
     seqcosts = []
     for _ in xs:
-        seqcosts.append(0.0125 * N + T)
+        seqcosts.append((0.01 + 0.0025 * k1) * N + T)
     seqcosts = np.array(seqcosts)
     plt.figure(figsize=(12, 6))
     plt.plot(xs, seqcosts, label="seq_scan")
@@ -53,9 +53,9 @@ def get_plot_seq_index(xs, T, N, b, t, n, scenario):
     indexcosts_best = []
     indexcosts_worst = []
     for s in xs:
-        index_space_cost = 0.0075 * s * n + 4 * s * t
+        index_space_cost = (0.005 + k2 * 0.0025) * s * n + 4 * s * t
 
-        table_space_cost_best = 0.0125 * s * N + s * T
+        table_space_cost_best = (0.01 + (k1 - k2) * 0.0025) * s * N + s * T
         indexcosts_best.append(index_space_cost + table_space_cost_best)
 
         if T <= b:
@@ -68,6 +68,7 @@ def get_plot_seq_index(xs, T, N, b, t, n, scenario):
             table_space_cost_worst = 4 * (
                 b + (N * s - 2 * T * b / (2 * T - b)) * (T - b) / T
             )
+        table_space_cost_worst += (0.01 + (k1 - k2) * 0.0025) * s * N
         indexcosts_worst.append(index_space_cost + table_space_cost_worst)
 
     plt.plot(xs, indexcosts_best, label="index_scan_best_case")
@@ -79,12 +80,42 @@ def get_plot_seq_index(xs, T, N, b, t, n, scenario):
 
 
 xs = np.arange(0, 1, 0.01)
+T = 179509
+N = 10950049
+b = 524288
+t = 102924
+n = 10950049
+k1 = 2
+k2 = 1
+get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_fit_cache_1")
+
+T = 252687
+N = 36233108
+b = 524288
+t = 30663
+n = 36233108
+k1 = 1
+k2 = 1
+get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_fit_cache_2")
+
+T = 179509
+N = 10950049
+b = 131072
+t = 102924
+n = 10950049
+k1 = 2
+k2 = 1
+get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_bigger_cache_1")
+
 T = 252687
 N = 36233108
 b = 131072
 t = 30663
 n = 36233108
-get_plot_seq_index(xs, T, N, b, t, n, "table_bigger_cache_2")
+k1 = 1
+k2 = 1
+get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_bigger_cache_2")
+
 # get_plot_by_selectivity(page_fetched_worst_case, xs, T, N, b)
 
 # T = 600000
