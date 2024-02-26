@@ -41,7 +41,7 @@ In PG, the term of `cost` refers to a number in an arbitrary unit, that indicate
 Our goal is to have a visualization of each scan type cost. To avoid too many case figures in the calculation, we assume the following:
 - The index is a fully index, not partial one.
 - The query doesn't contain operators that lead to a loop. Example: `IN, = ANY(ARRAY()), JOIN`.
-We consider these situations in the end to generalize the result.
+TODO: We consider these situations in the end to generalize the result.
 
 In the following calculation, we use:
 - T refers to the number of pages in the table.
@@ -178,13 +178,13 @@ In case of low correlation, PG use an approximation of number page to fetch
 ```
 
 - when T <= b
-$$table\\_IO\\_cost\\_worst\\_case = 4 * PF  = 4 * min(2TNs/(2T+Ns), T)$$
+$$table\\_IO\\_cost\\_worst\\_case = 4 * PF = 4 * min(2TNs/(2T+Ns), T)$$
 
 - when T > b and Ns <= 2Tb/(2T-b)
-$$table\\_IO\\_cost\\_worst\\_case = 4 * PF  = 8TNs/(2T+Ns)$$
+$$table\\_IO\\_cost\\_worst\\_case = 4 * PF = 8TNs/(2T+Ns)$$
 
 - when T > b and Ns > 2Tb/(2T-b)
-$$table\\_IO\\_cost\\_worst\\_case = 4(b + (Ns - 2Tb/(2T-b))*(T-b)/T)$$
+$$table\\_IO\\_cost\\_worst\\_case = 4 * PF = 4(b + (Ns - 2Tb/(2T-b))*(T-b)/T)$$
 
 For other cases, the cost is computed as pro-rate between the worst and the best case using C<sup>2</sup>.
 
@@ -212,7 +212,7 @@ k1 = 2
 k2 = 1
 ```
 
-![Seq & Index cost](cost_table_fit_cache_1.png)
+![Compare-cost-table-fit-cache-config-1](cost_table_fit_cache_1.png)
 
 **Configuration 2**: Table `cast_info`. The effective cache size is 4Gb. The query contains filters on 1 index attribute. The index is not unique. Example:
 
@@ -230,7 +230,7 @@ k1 = 1
 k2 = 1
 ```
 
-![Seq & Index cost](cost_table_fit_cache_2.png)
+![Compare-cost-table-fit-cache-config-2](cost_table_fit_cache_2.png)
 
 
 #### Scenario 2: The table size is bigger than the cache size (T > b)
@@ -247,7 +247,7 @@ k1 = 2
 k2 = 1
 ```
 
-![Seq & Index cost](cost_table_bigger_cache_1.png)
+![Compare-cost-table-bigger-cache-config-1](cost_table_bigger_cache_1.png)
 
 **Configuration 2**: Same as the configuration 2 of the previous scenario. We reduced the effective cache size to only 1Gb.
 
@@ -261,7 +261,7 @@ k1 = 1
 k2 = 1
 ```
 
-![Seq & Index cost](cost_table_bigger_cache_2.png)
+![Compare-cost-table-bigger-cache-config-2](cost_table_bigger_cache_2.png)
 
 #### Discussion
 - Index cost is smaller than sequential cost when s is near 0: **index improve performance when it determines only a few row.**
@@ -269,3 +269,4 @@ k2 = 1
 - In the worst case, the index cost increases extremely fast when s increases. The query only need to targets more than about 2% number of rows in the table to be more expensive than a full table scan.
 
 ## Conclusion
+In this article, we did a quantitative analysis of the execution costs of Sequential Scan and Index Scan in Postgres. Through the formulas and graphs, we better understood the mechanism of index scan in Postgres. We identified the situation in which index scan outperforms sequential scan. Finally, we recognized the important of index correlation in Index Scan when the number of records to retrieve is important.
