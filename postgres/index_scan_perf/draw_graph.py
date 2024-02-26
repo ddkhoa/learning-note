@@ -79,15 +79,162 @@ def get_plot_seq_index(xs, T, N, b, t, n, k1, k2, scenario):
     plt.savefig(f"./cost_{scenario}.png")
 
 
+def compute_cost(xs, T, N, b, t, n, k1, k2):
+    index_cpu_cost = []
+    index_IO_cost = []
+    table_cpu_cost = []
+    table_IO_cost_worst = []
+    table_IO_cost_best = []
+
+    for s in xs:
+        index_cpu_cost.append((0.005 + k2 * 0.0025) * s * n)
+        index_IO_cost.append(4 * s * t)
+        table_cpu_cost.append((0.01 + (k1 - k2) * 0.0025) * s * N)
+        table_IO_cost_best.append(s * T)
+
+        if T <= b:
+            a = 2 * T * N * s / (2 * T + N * s)
+            IO_cost = 4 * min(a, T)
+        elif s <= 2 * T * b / (N * (2 * T - b)):
+            IO_cost = 8 * T * N * s / (2 * T + N * s)
+        else:
+            IO_cost = 4 * (b + (N * s - 2 * T * b / (2 * T - b)) * (T - b) / T)
+        table_IO_cost_worst.append(IO_cost)
+    return (
+        index_cpu_cost,
+        index_IO_cost,
+        table_cpu_cost,
+        table_IO_cost_worst,
+        table_IO_cost_best,
+    )
+
+
+def get_plot_index_breakdown(cost, scenario):
+    (
+        index_cpu_cost,
+        index_IO_cost,
+        table_cpu_cost,
+        table_IO_cost_worst,
+        table_IO_cost_best,
+    ) = cost
+    # Specify colors for each series
+    colors = ["blue", "orange", "green", "red"]
+    plt.figure(figsize=(12, 6))
+
+    # Plotting the first area chart
+    plt.subplot(1, 2, 1)
+    series = [
+        (index_cpu_cost, "Index CPU Cost"),
+        (index_IO_cost, "Index IO Cost"),
+        (table_cpu_cost, "Table CPU Cost"),
+        (table_IO_cost_worst, "Table IO Cost Worst"),
+    ]
+
+    cumulated = []
+    last_cumulated = []
+    for i in range(0, len(series)):
+        data, label = series[i]
+        color = colors[i]
+
+        if i == 0:
+            last_cumulated = [0 for _ in range(len(data))]
+            cumulated = [0 for _ in range(len(data))]
+        else:
+            last_cumulated = [elem for elem in cumulated]
+
+        cumulated = [cumulated[i] + data[i] for i in range(len(data))]
+        plt.plot(
+            cumulated,
+            label=label,
+            color=color,
+            alpha=0.7,
+        )
+
+        plt.fill_between(
+            range(len(data)),
+            last_cumulated,
+            cumulated,
+            color=color,
+            alpha=0.3,
+            edgecolor=color,
+        )
+
+    plt.xlabel("s")
+    plt.ylabel("Cost")
+    plt.title("Area Chart - Worst Case")
+    plt.legend()
+
+    # Plotting the second area chart
+    plt.subplot(1, 2, 2)
+    series = [
+        (index_cpu_cost, "Index CPU Cost"),
+        (index_IO_cost, "Index IO Cost"),
+        (table_cpu_cost, "Table CPU Cost"),
+        (table_IO_cost_best, "Table IO Cost Best"),
+    ]
+    cumulated = []
+    last_cumulated = []
+    for i in range(0, len(series)):
+        data, label = series[i]
+        color = colors[i]
+
+        if i == 0:
+            last_cumulated = [0 for _ in range(len(data))]
+            cumulated = [0 for _ in range(len(data))]
+        else:
+            last_cumulated = [elem for elem in cumulated]
+
+        cumulated = [cumulated[i] + data[i] for i in range(len(data))]
+        plt.plot(
+            cumulated,
+            label=label,
+            color=color,
+            alpha=0.7,
+        )
+
+        plt.fill_between(
+            range(len(data)),
+            last_cumulated,
+            cumulated,
+            color=color,
+            alpha=0.3,
+            edgecolor=color,
+        )
+
+    plt.xlabel("s")
+    plt.ylabel("Cost")
+    plt.title("Area Chart - Best Case")
+    plt.legend()
+
+    # Adjust layout for better visualization
+    plt.tight_layout()
+
+    # Show the plot
+    plt.savefig(f"./index_cost_breakdown_{scenario}.png")
+
+
 xs = np.arange(0, 1, 0.01)
-T = 179509
-N = 10950049
+T = 161984
+N = 14838350
 b = 524288
-t = 102924
-n = 10950049
+t = 18663
+n = 14838350
 k1 = 2
 k2 = 1
 get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_fit_cache_1")
+get_plot_index_breakdown(
+    compute_cost(
+        xs,
+        T,
+        N,
+        b,
+        t,
+        n,
+        k1,
+        k2,
+    ),
+    "table_fit_cache_1",
+)
 
 T = 252687
 N = 36233108
@@ -97,15 +244,41 @@ n = 36233108
 k1 = 1
 k2 = 1
 get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_fit_cache_2")
+get_plot_index_breakdown(
+    compute_cost(
+        xs,
+        T,
+        N,
+        b,
+        t,
+        n,
+        k1,
+        k2,
+    ),
+    "table_fit_cache_2",
+)
 
-T = 179509
-N = 10950049
+T = 161984
+N = 14838350
 b = 131072
-t = 102924
-n = 10950049
+t = 18663
+n = 14838350
 k1 = 2
 k2 = 1
 get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_bigger_cache_1")
+get_plot_index_breakdown(
+    compute_cost(
+        xs,
+        T,
+        N,
+        b,
+        t,
+        n,
+        k1,
+        k2,
+    ),
+    "table_bigger_cache_1",
+)
 
 T = 252687
 N = 36233108
@@ -115,6 +288,20 @@ n = 36233108
 k1 = 1
 k2 = 1
 get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_bigger_cache_2")
+get_plot_index_breakdown(
+    compute_cost(
+        xs,
+        T,
+        N,
+        b,
+        t,
+        n,
+        k1,
+        k2,
+    ),
+    "table_bigger_cache_2",
+)
+
 
 # get_plot_by_selectivity(page_fetched_worst_case, xs, T, N, b)
 

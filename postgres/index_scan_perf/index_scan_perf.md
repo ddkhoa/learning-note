@@ -39,17 +39,17 @@ In PG, the term of `cost` refers to a number in an arbitrary unit, that indicate
 **cpu_operator_cost**: Cost of execute an operator in a query. Default value is 0.0025.
 
 Our goal is to have a visualization of each scan type cost. To avoid too many case figures in the calculation, we assume the following:
-- The index is a fully one, not partial
-- The query doesn't contain operators that lead to a loop. Example: IN, = ANY(ARRAY()), JOIN
+- The index is a fully index, not partial one.
+- The query doesn't contain operators that lead to a loop. Example: `IN, = ANY(ARRAY()), JOIN`.
 We consider these situations in the end to generalize the result.
 
 In the following calculation, we use:
-- T refers to the number of pages in the table
-- N refers to the number of tuples in the table
-- t refers to the number of pages in the index
-- n refers to the number of tuples in the index
-- b refers to the number of pages in the cache (both Postgres and OS)
-- k1 refers to the number of conditions in the query
+- T refers to the number of pages in the table.
+- N refers to the number of tuples in the table.
+- t refers to the number of pages in the index.
+- n refers to the number of tuples in the index.
+- b refers to the number of pages in the cache (both Postgres and OS).
+- k1 refers to the number of conditions in the query.
 - k2 refers to the number of conditions used by the index.
 
 ### Sequential Scan cost
@@ -83,13 +83,13 @@ The index space visiting cost using BTREE  is computed by 2 functions `genericco
 
 > **Selectivity**
 >
-> In Index Scan, **indexSelectivity** refers to the ratio of the number of table entries that satisfy the filter conditions on the total number of table entries. Let's call it `s`.
+> In Index Scan, **indexSelectivity** refers to the ratio of the number of table entries that satisfy the filter conditions to the total number of table entries. Let's call it `s`.
 >
 > We have:
 >
 > $$n\\_tuples\\_fetched = s * n\\_tuples = s * N$$
 >
-> "For a btree scan, only leading '=' quals plus inequality quals for the immediately next attribute contribute to index selectivity". So **btreeSelectivity** is greater than or equal to **indexSelectivity**. We use `bs` to refers to the btreeSelectivity. We have:
+> For the btree access method, **btreeSelectivity** is the ratio of the number of index entries that PG need to process to the total number of index entries. "For a btree scan, only leading '=' quals plus inequality quals for the immediately next attribute contribute to index selectivity". **btreeSelectivity** is greater than or equal to **indexSelectivity**. We use `bs` to refers to the btreeSelectivity. We have:
 > 
 > $$n\\_index\\_tuples\\_read =  bs * n\\_index\\_tuples = bs * n$$ 
 > 
@@ -115,11 +115,11 @@ $$index\\_IO\\_cost = random\\_page\\_cost * n\\_index\\_pages\\_fetched = 4 * b
 We have the `index_cost` formula as following:
 $$index\\_cost = (0.005 + k_2 * 0.0025) * bs * n + 4 *  bs * t$$
 
-Because `bs >= s`, we can replace `bs = s + c`:
+Because `bs >= s`, we can replace `bs = s + d`:
 
-$$index\\_cost = (0.005 + k_2 * 0.0025) * (s + c) * n + 4 * (s + c) * t = (0.005 + k_2 * 0.0025) * s * n + 4 * s * t + C$$
+$$index\\_cost = (0.005 + k_2 * 0.0025) * (s + d) * n + 4 * (s + d) * t = (0.005 + k_2 * 0.0025) * s * n + 4 * s * t + D$$
 
-We can remove constant from the formula:
+We remove constant `D` from the formula:
 $$index\\_cost = (0.005 + k_2 * 0.0025) * s * n + 4 * s * t$$
 
 #### Table cost
@@ -143,8 +143,8 @@ Table IO cost depends on the number of pages we need to retrieve from PG. This n
 >It indicates the similarity between the logical order of index entries and the physical order of corresponds heap entries. The range of index correlation values is [-1, 1]. The value 1 means index entries and heap entries are in the same order. The value -1 means they are in inverted order. When this value is 0, there are no correlation at all between them. In the calculation, we use `C` to refer to Index Correlation.
 
 There are 3 situations:
-- Best case (C = 1 or C = -1)
-- Worst case (C = 0)
+- Best case (C = 1 or C = -1).
+- Worst case (C = 0).
 - Normal cases (C is between -1 and 1 but not equals to 0).
 
 **Best case**
@@ -192,25 +192,33 @@ $$table\\_IO_cost\\ = table\\_IO\\_cost\\_worst\\_case + C^2(table\\_IO\\_cost\\
 
 
 ### Visualization
-The cost of index size depends on many parameters. We consider some scenarios where T, N, b, t, n, k1 and k2 are constants. We draw a graph that illustrates the relation between the scan cost and `s`:
+The formulas mentioned previously depend on many parameters. We consider some scenarios where `T`, `N`, `b`, `t`, `n`, `k1` and `k2` are constants. Using the database `imdb` available [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/2QYZBT), we draw graphs that illustrate the relation between the scan cost and `s`.
 
 #### Scenario 1: The table size is smaller than the cache size (T <= b)
 
-**Configuration 1**: From table with 10950049 rows. Each row contains 2 varchar columns, 1 timestamp column and 2 integer columns. The index is on the varchar column and is unique. The effective cache size is 4Gb. The query contains 2 conditions and 1 of them is on the index.
+**Configuration 1**: Table `movie_info`. The effective cache size is 4Gb. The query contains filters on 2 attributes and 1 of them has an index. The index is not unique. Example:
+
+```sql
+SELECT * FROM movie_info WHERE movie_id >= :lower_bound AND movie_id <= :upper_bound AND info LIKE '%version%';
+```
 
 ```
-T = 179509
-N = 10950049
+T = 161984
+N = 14838350
 b = 524288
-t = 102924
-n = 10950049
+t = 18663
+n = 14838350
 k1 = 2
 k2 = 1
 ```
 
 ![Seq & Index cost](cost_table_fit_cache_1.png)
 
-**Configuration 2**: From table with 36233108 rows. Each row contains 6 integer columns and 1 varchar column. The index is on the integer column and is not unique. The effective cache size is 4Gb. The query contains 1 condition it is on the index.
+**Configuration 2**: Table `cast_info`. The effective cache size is 4Gb. The query contains filters on 1 index attribute. The index is not unique. Example:
+
+```sql
+SELECT * FROM cast_info WHERE movie_id >= :lower_bound AND movie_id <= :upper_bound;
+```
 
 ```
 T = 252687
@@ -224,18 +232,17 @@ k2 = 1
 
 ![Seq & Index cost](cost_table_fit_cache_2.png)
 
-The pattern is quite the same.
 
 #### Scenario 2: The table size is bigger than the cache size (T > b)
 
 **Configuration 1**: Same as the configuration 1 of the previous scenario. We reduced the effective cache size to only 1Gb.
 
 ```
-T = 179509
-N = 10950049
+T = 161984
+N = 14838350
 b = 131072
-t = 102924
-n = 10950049
+t = 18663
+n = 14838350
 k1 = 2
 k2 = 1
 ```
