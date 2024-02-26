@@ -269,4 +269,4 @@ k2 = 1
 - In the worst case, the index cost increases extremely fast when s increases. The query only need to targets more than about 2% number of rows in the table to be more expensive than a full table scan.
 
 ## Conclusion
-In this article, we did a quantitative analysis of the execution costs of Sequential Scan and Index Scan in Postgres. Through the formulas and graphs, we better understood the mechanism of index scan in Postgres. We identified the situation in which index scan outperforms sequential scan. Finally, we recognized the important of index correlation in Index Scan when the number of records to retrieve is important.
+In this article, we did a quantitative analysis of the execution costs of Sequential Scan and Index Scan in Postgres. Through the formulas and graphs, we better understood the mechanism of index scan in Postgres. We identified the situation in which index scan outperforms sequential scan. Finally, we recognized the critical role of index correlation in Index Scan when the number of records to retrieve is important.
