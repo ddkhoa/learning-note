@@ -264,7 +264,7 @@ k2 = 1
 ![Compare-cost-table-bigger-cache-config-2](cost_table_bigger_cache_2.png)
 
 #### Discussion
-- Index cost is smaller than sequential cost when s is near 0: **index improve performance when it determines only a few row.**
+- Index cost is smaller than sequential cost when s is near 0: **index improve performance when it determines only a few rows.**
 - Regardless of the cache size available, the difference between the worst and the best index cost is significant when s increases. When retrieve a relatively high number of rows from the table, index correlation has a big impact on the whole index scan process.
 - In the worst case, the index cost increases extremely fast when s increases. The query only need to targets more than about 2% number of rows in the table to be more expensive than a full table scan.
 

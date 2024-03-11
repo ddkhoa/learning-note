@@ -231,7 +231,7 @@ def draw_chart(title, kind: Literal["bar", "line"], list_scenario, list_data):
 table_size_delete_middle = experimentation_vacuum(where_to_delete="middle")
 table_size_delete_end = experimentation_vacuum(where_to_delete="end")
 draw_chart(
-    "Table size evolution during VACUUM process",
+    "Heap size evolution - VACUUM",
     "line",
     [
         "Delete rows at the middle",
@@ -246,10 +246,35 @@ index_size_vacuum_reinsert_same_data = experimentation_vacuum_index_cleanup_dele
 index_size_vacuum_insert_new_data = experimentation_vacuum_index_cleanup_delete_rows(
     reinsert_same_data=False
 )
+draw_chart(
+    "Index size evolution - VACUUM INDEX_CLEANUP",
+    "line",
+    [
+        "VACUUM - Reinsert same data",
+        "VACUUM - Insert new data",
+    ],
+    [
+        index_size_vacuum_reinsert_same_data,
+        index_size_vacuum_insert_new_data,
+    ],
+)
+
 index_size_reindex_reinsert_same_data = experimentation_reindex(reinsert_same_data=True)
 index_size_reindex_reinsert_new_data = experimentation_reindex(reinsert_same_data=False)
 draw_chart(
-    "Index size evolution during VACUUM & REINDEX process",
+    "Index size evolution - REINDEX",
+    "line",
+    [
+        "REINDEX - Reinsert same data",
+        "REINDEX - Insert new data",
+    ],
+    [
+        index_size_reindex_reinsert_same_data,
+        index_size_reindex_reinsert_new_data,
+    ],
+)
+draw_chart(
+    "Index size evolution - VACUUM INDEX_CLEANUP vs. REINDEX",
     "line",
     [
         "VACUUM - Reinsert same data",
@@ -264,6 +289,3 @@ draw_chart(
         index_size_reindex_reinsert_new_data,
     ],
 )
-# experimentation_vacuum_index_cleanup_update_rows()
-
-# experimentation_reindex()
