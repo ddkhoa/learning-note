@@ -31,7 +31,10 @@ Alembic generate an empty file in the folder `./alembic/versions`. In this file,
 def upgrade() -> None:
     op.create_table(
         "test",
-        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column('id', sa.INTEGER(), nullable=False),
+        sa.Column('name', sa.TEXT(), nullable=False),
+        sa.Column('enum_field', postgresql.ENUM('one', 'two', 'three', name='myenum'), nullable=True),
+        sa.PrimaryKeyConstraint('id')
     )
 
 
@@ -47,18 +50,20 @@ alembic upgrade head
 
 We go to the database, the table is created! We also notice a table `alembic`. It is created by alembic to store the current version.
 
-In the following section, we present to you some good practices in database migration.
+### Our thoughts
+As shown in the previous example, alembic migration file represent the different between 2 database versions. Overtime, the database structure is scattered. It is difficult to find the information of a specific object. Example: A column was created in 1 migration but then is renamed and even change the datatype.
 
-### Prevent information scattered
-Each migration file represent the different between 2 database version. Overtime, the database structure is scattered. It is difficult to find the information of a specific object. Example: A column was created in 1 migration but then is renamed and even change the datatype.
+To avoid that situation, we want to centralize the database information in 1 place. In the following part, we present to you some tips to archive that goal.
 
-In `alembic`, we can avoid this problem using the `autogenerate` feature. Notice this comment in the file `env.py`:
+
+#### Using auto-generating feature
+In `alembic`, we can auto generate a migration file. Notice this comment in the file `env.py`:
 ```python
 # add your model's MetaData object here
 # for 'autogenerate' support
 ```
 
-To use this feature, we define tables we want in a `model` file. 
+To use this feature, we define the table structure in `model` file. 
 
 ```python
 # model.py
@@ -73,6 +78,8 @@ metadata = Base.metadata
 class TestTable(Base):
     __tablename__ = "test"
     id = Column(INTEGER(), primary_key=True)
+    name = Column(TEXT(), nullable=False)
+    enum_field = Column(ENUM(MyEnum))
 
 ```
 
@@ -93,21 +100,11 @@ When generate a revision, we add the parameter `autogenerate` in the command.
 
 Alembic will compare the difference between the model file and the database current state. Then it generates the migration file with the commands to fill the difference.
 
-This is not a handy feature in `alembic`, but can also help us to centralize the database information in 1 place. It is easier to find the type of a specific column or verify if an index exists. 
+This is not a handy feature in `alembic`, but can also help us to centralize the database information in the `model` file. It is easier to find the type of a specific column or verify if an index exists. 
 
-Important: if you already define the table structure in `model` file and don't use the `autogenerate` feature yet, you should adopt it. Why? Defining the table structure in 2 places (the model file and the migration file) creates **two** sources of truth. We can forget to update a column type in `model` file after changing it in a migration. By using `autogenerate` feature, we only need to maintain the `model` file properly.  
+**Important**: if you already define the table structure in `model` file and don't use the `autogenerate` feature yet, you should adopt it. Why? Defining the table structure in 2 places (the model file and the migration file) creates **two** sources of truth. We can forget to update a column type in `model` file after changing it in a migration. By using `autogenerate` feature, we only need to maintain the `model` file properly.  
 
-### Include the maximum information in model file
-In the previous section, we defined the table structure by a class in `model` file. It's good, but not enough. In the database, we have various information:
-- index
-- constraints
-- enum
-- partition info if any
-
-The goal is to have the maximum information in the model file so it becomes a reliable source of database information.
-
-#### Index
-Index can be defined as table arguments, for example:
+Not only the table columns, we can define various objects using `sqlalchemy` declarative syntax. Below is an example of defining an index:
 
 ```python
 class TestTable(Base):
@@ -124,11 +121,12 @@ class TestTable(Base):
     )
 
 ```
-When you generate the migration file, Alembic autogenerates the line to create the index.
+Constraints and foreigner keys can also be defined in the similar way.
+The following parts represent two exceptions when maintaining `enum` and `partitioned tables` in model file.
 
 #### Enum
 Enum is convenient for a column with some static values. Enum column doesn't require join operators to have meaningful names and provides a check when inserting the data.
-If an enum column appears in 2 different tables, we want to use the same enum type. The worst case scenario is when we use the same enums under different names (so technically they are 2 different enums in the database) for 2 columns. It is very likely to have the following issues:
+If an enum column appears in 2 different tables, we want to use the same enum type. The worst case scenario is when we use the same enums under different names (so technically they are 2 different enums in the database) for 2 columns. In that situation, it is very likely to have the following issues:
 
   - Query performance
 Index scan doesn't work when casting.
@@ -150,25 +148,17 @@ class TestTable2(Base):
     id = Column(INTEGER(), primary_key=True)
     email = Column(TEXT(), nullable=False)
     enum_field = Column(ENUM(MyEnum))
-
-    __table_args__ = (
-        Index(
-            "test_name_idx",
-            name,
-        ),
-    )
-
 ```
 The `enum_field` in this table is the same with the column in the table `test` mentioned previously. However, when generate a migration file, alembic tries to recreate the enum:
 ```python
 def upgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.create_table('test2',
-    sa.Column('id', sa.INTEGER(), nullable=False),
-    sa.Column('email', sa.TEXT(), nullable=False),
-    sa.Column('enum_field', postgresql.ENUM('one', 'two', 'three', name='myenum'), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
+        sa.Column('id', sa.INTEGER(), nullable=False),
+        sa.Column('email', sa.TEXT(), nullable=False),
+        sa.Column('enum_field', postgresql.ENUM('one', 'two', 'three', name='myenum'), nullable=True),
+        sa.PrimaryKeyConstraint('id')
+        )
     # ### end Alembic commands ###
 
 
@@ -199,10 +189,46 @@ In the migration generated using this plugin, alembic creates the enum before us
 
 The enum `myenum` can be reused in the future migrations.
 
-### Partition info
+#### Partitioned tables
+A partitioned table can have many child tables. If alembic cannot find the corresponding classes in the model file, it will generate a lot of codes in the migration file to drop those tables (and recreate them in the `downgrade` function). We think that having partition classes in model file is not necessary. Because we don't work directly with a particular partition. In this case, we choose to ignore some tables and indexes when generating a new migration.
+
+Suppose our partitioned tables contain `_part_` in its name and other tables don't.
+
+In `alembic.ini` file, we specify the pattern to exclude:
+
+```ini
+[alembic:exclude]
+tables = \w+_part_\w+
+```
+
+Then in `env.py`, we define a `include_object` functions, taking into account the pattern:
+
+```python
+def get_excludes_from_config(config_, type_="tables"):
+    excludes = config_.get(type_, None)
+    if excludes is None:
+        return []
+    
+    excludes = excludes.split(",")
+    return excludes
 
 
+def include_object(object, name, type_, *args, **kwargs):
+    excluded_tables = get_excludes_from_config(config.get_section('exclude'), "tables")
 
-We can have 2 columns in 2 tables, having the same enum type.
--> Work in the same migration but if we do the same thing in a following migration, it doesn't work
-The database has 1 enum
+    if type_ == 'table':
+        for table_pattern in excluded_tables:
+            if re.match(table_pattern, name):
+                print(f"Ignore table {name} in auto-generated migration")
+                return False
+
+        return True
+
+    return True
+```
+
+All the tables that match the excluding pattern in the `alembic.ini` files will be ignored when alembic generating a new migration file.
+
+
+### Conclusion
+In this article, we presented to you the subject of migrating data structure in PostgreSQL. We discuss some good practices to maintain the database migrations in a long-run project, including code examples. Finally, we talk about some exceptions and the tricks to handle them. We hope this article gave you useful information about PostgreSQL.
