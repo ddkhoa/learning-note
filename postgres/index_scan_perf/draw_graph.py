@@ -2,7 +2,11 @@ import numpy as np
 from matplotlib import pylab as plt
 
 
-def page_fetched_worst_case(s, T, N, b):
+def compute_pages_to_fetch_best_case(s, T):
+    return s * T
+
+
+def compute_pages_to_fetch_worst_case(s, T, N, b):
     if T <= b:
         # print("1")
         a = 2 * T * N * s / (2 * T + N * s)
@@ -13,6 +17,25 @@ def page_fetched_worst_case(s, T, N, b):
 
     # print("3")
     return b + (N * s - 2 * T * b / (2 * T - b)) * (T - b) / T
+
+
+def draw_pages_fetched_chart(T, N, b, scenario):
+    xs = np.arange(0, 1, 0.01)
+    pages_to_fetch_best_case = [compute_pages_to_fetch_best_case(s, T) for s in xs]
+    pages_to_fetch_worst_case = [
+        compute_pages_to_fetch_worst_case(s, T, N, b) for s in xs
+    ]
+    plt.figure(figsize=(12, 6))
+    plt.plot(xs, pages_to_fetch_best_case, label="high_correlation")
+    plt.plot(xs, pages_to_fetch_worst_case, label="low_correlation")
+    plt.xlabel("Selectivity")
+    plt.ylabel("Number of pages to fetch")
+    scenario_title = (" ".join(scenario.split("_"))).capitalize()
+    plt.title(
+        f"Number of pages to fetch in high and low correlation - {scenario_title} "
+    )
+    plt.legend(loc="center right")
+    plt.savefig(f"./pages_to_fetch_{scenario}.png")
 
 
 def get_plot_by_selectivity(func, xs, T, N, b):
@@ -213,107 +236,116 @@ def get_plot_index_breakdown(cost, scenario):
     plt.savefig(f"./index_cost_breakdown_{scenario}.png")
 
 
-xs = np.arange(0, 1, 0.01)
-T = 161984
-N = 14838350
-b = 524288
-t = 18663
-n = 14838350
-k1 = 2
-k2 = 1
-get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_fit_cache_1")
-get_plot_index_breakdown(
-    compute_cost(
-        xs,
-        T,
-        N,
-        b,
-        t,
-        n,
-        k1,
-        k2,
-    ),
-    "table_fit_cache_1",
-)
+# xs = np.arange(0, 1, 0.01)
+# T = 161984
+# N = 14838350
+# b = 524288
+# t = 18663
+# n = 14838350
+# k1 = 2
+# k2 = 1
+# get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_fit_cache_1")
+# get_plot_index_breakdown(
+#     compute_cost(
+#         xs,
+#         T,
+#         N,
+#         b,
+#         t,
+#         n,
+#         k1,
+#         k2,
+#     ),
+#     "table_fit_cache_1",
+# )
 
-T = 252687
-N = 36233108
-b = 524288
-t = 30663
-n = 36233108
-k1 = 1
-k2 = 1
-get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_fit_cache_2")
-get_plot_index_breakdown(
-    compute_cost(
-        xs,
-        T,
-        N,
-        b,
-        t,
-        n,
-        k1,
-        k2,
-    ),
-    "table_fit_cache_2",
-)
+# T = 252687
+# N = 36233108
+# b = 524288
+# t = 30663
+# n = 36233108
+# k1 = 1
+# k2 = 1
+# get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_fit_cache_2")
+# get_plot_index_breakdown(
+#     compute_cost(
+#         xs,
+#         T,
+#         N,
+#         b,
+#         t,
+#         n,
+#         k1,
+#         k2,
+#     ),
+#     "table_fit_cache_2",
+# )
 
-T = 161984
-N = 14838350
-b = 131072
-t = 18663
-n = 14838350
-k1 = 2
-k2 = 1
-get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_bigger_cache_1")
-get_plot_index_breakdown(
-    compute_cost(
-        xs,
-        T,
-        N,
-        b,
-        t,
-        n,
-        k1,
-        k2,
-    ),
-    "table_bigger_cache_1",
-)
+# T = 161984
+# N = 14838350
+# b = 131072
+# t = 18663
+# n = 14838350
+# k1 = 2
+# k2 = 1
+# get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_bigger_cache_1")
+# get_plot_index_breakdown(
+#     compute_cost(
+#         xs,
+#         T,
+#         N,
+#         b,
+#         t,
+#         n,
+#         k1,
+#         k2,
+#     ),
+#     "table_bigger_cache_1",
+# )
 
-T = 252687
-N = 36233108
-b = 131072
-t = 30663
-n = 36233108
-k1 = 1
-k2 = 1
-get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_bigger_cache_2")
-get_plot_index_breakdown(
-    compute_cost(
-        xs,
-        T,
-        N,
-        b,
-        t,
-        n,
-        k1,
-        k2,
-    ),
-    "table_bigger_cache_2",
-)
+# T = 252687
+# N = 36233108
+# b = 131072
+# t = 30663
+# n = 36233108
+# k1 = 1
+# k2 = 1
+# get_plot_seq_index(xs, T, N, b, t, n, k1, k2, "table_bigger_cache_2")
+# get_plot_index_breakdown(
+#     compute_cost(
+#         xs,
+#         T,
+#         N,
+#         b,
+#         t,
+#         n,
+#         k1,
+#         k2,
+#     ),
+#     "table_bigger_cache_2",
+# )
 
 
-# get_plot_by_selectivity(page_fetched_worst_case, xs, T, N, b)
+# get_plot_by_selectivity(compute_pages_to_fetch_worst_case, xs, T, N, b)
 
 # T = 600000
 # N = T * 60
 # s = 0.1
 # xb = [524288, 524288 * 2, 524288 * 4, 524288 * 8]
-# get_plot_by_cache_size(page_fetched_worst_case, xb, T, N, s)
+# get_plot_by_cache_size(compute_pages_to_fetch_worst_case, xb, T, N, s)
 
 
 # s = 0.2
 # b = 524288
 # xT = np.arange(100_000, 600_000, 1000)
 # xN = [T * 60 for T in xT]
-# get_plot_by_table_size(page_fetched_worst_case, xT, xN, s, b)
+# get_plot_by_table_size(compute_pages_to_fetch_worst_case, xT, xN, s, b)
+
+T = 161984
+N = 14838350
+b = 524288
+draw_pages_fetched_chart(T, N, b, "table_fit_in_cache")
+T1 = 161984
+N1 = 14838350
+b1 = 131072
+draw_pages_fetched_chart(T1, N1, b1, "table_bigger_than_cache")

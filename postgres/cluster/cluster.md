@@ -7,12 +7,11 @@ When it comes to query performance, indexing are commonly referred to as the mag
 - PG disposes a cache that stores recently used pages. If a page is found in cache, then it is returned directly and the engine does not need to read data from the disk.
 
 ## Index Scan strategy
-In PG, an index is a data structure used to efficiently retrieve records from a table based on the values of specific columns.
-An index contains pointers to the actual rows in the table. Pointers are organized in a specific manner for rapidly retrieve individual record. In an Index Scan operation, PG does the following actions, in order:
+In PG, an index is a data structure used to efficiently retrieve records from a table based on the values of specific columns. An index contains pointers to the actual rows in the table. Pointers are organized in a specific manner for rapidly retrieve individual record. In an Index Scan operation, PG does the following actions, in order:
 - PG visits the index space first and finds the relevant index tuples.
 - Index tuples (pointers) contains information to locate the tuple in the heap space: the page and offset. PG uses this information to read the page and retrieve the relevant tuples. (process *)
 
-From the description, we can gain the first insight into index scan performance. Instead of scanning the entire table, the engine only need to find the relevant tuples from the index (and this is very fast thanks to the optimized data structure). Then the engine only visit **a few blocks** to retrieve the data.
+From the description, we can gain the first insight into index scan performance. Instead of scanning the entire table, the engine only need to find the relevant tuples from the index (and this is very fast thanks to the optimized data structure). Then the engine only visits **a few blocks** to retrieve the data.
 
 However, if the query targets an important number of rows, things might change. In this scenario, the engine repeats the previous process for each entry satisfies the query. The second step in the process is costly. It is a random read and is weighted as 4 in the default PG's settings. To compare, in Sequential Scan Strategy, read operators is weighted as only 1.
 
@@ -33,13 +32,13 @@ The following image illustrate the different between high correlation and low co
 @TODO: add image
 
 A more formal explanation come from PG's source code. The number of heap pages to fetch is computed in the function `cost_index` located in `/src/backend/optimizer/path/costsize.c`. We denote: 
-- T = # pages in table
-- N = # tuples in table
+- T = number of pages in table
+- N = number of tuples in table
 - s = selectivity = fraction of table to be scanned
-- b = # buffer pages available (we include kernel space here)
+- b = number of buffer pages available (we include kernel space here)
 
-In the best-case scenario, the number of pages to fetch is `s * T`.
-In the worst-case scenario, this number of pages to fetch is computed approximately using the following function:
+In the high correlation scenario, the number of pages to fetch is `s * T`.
+In the low correlation scenario, this number of pages to fetch is computed approximately using the following function:
 ```C++
 *	PF =
 *		min(2TNs/(2T+Ns), T)            when T <= b
@@ -47,32 +46,34 @@ In the worst-case scenario, this number of pages to fetch is computed approximat
 *		b + (Ns - 2Tb/(2T-b))*(T-b)/T	when T > b and Ns > 2Tb/(2T-b)
 ```
 
-The following graphs compare the number of page fetches between the high and low correlation, using `s` as variable.
+We will visualize the number of pages to fetch in high correlation and low correlation scenario, using `s` as variable. The data used in the following section come from the `imdb` dataset, you can get it [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/2QYZBT).
 
 #### Case T <= b - Table fit in cache.
+We use the table `movie_info`. It has 161984 pages, 14838350 rows. For the cache, we use the default configuration of PG which is 524288 pages (4Gb).
 ```
 T = 161984
 N = 14838350
 b = 524288
 ```
 
-@TODO: add image
+![Number pages to fetch - Table fit in cache](./pages_to_fetch_table_fit_in_cache.png)
 
 #### Case T > b - Table doesn't fit in cache.
+We use the same configuration as above, except the cache that is only 1Gb. 
 ```
 T = 161984
 N = 14838350
 b = 131072
 ```
 
-@TODO: add image
+![Number pages to fetch - Table doesn't fit in cache](./pages_to_fetch_table_bigger_than_cache.png)
 
 #### Discussion
-- Number of page fetches in Index Scan is significantly smaller than in Sequential Scan (T) when s is near 0: **index improve performance when it determines only a few rows.**
-- Regardless of the cache size available, the difference between the worst and the best case is significant when s increases. When retrieve a relatively high number of rows from the table, index correlation has a big impact on the whole index scan process.
+- Regardless of the cache size, the number of pages to fetch in the low correlation scenario is always higher. This number also increases faster in the low correlation scenario compared to the high correlation scenario.
+- When the table can be fit in the cache, the number of pages to fetch is bounded by the total pages of the table. **However, if the table is bigger than the cache, Index Scan can fetch more pages than the entire table size**. In this case, it is even worst than a seq scan operation.
 
 ### Cluster
-Given the important role of **correlation** in Index Scan performance. One method to enhance Index Scan performance is `cluster`. This operation reorganizes the table rows physically according to the order of a given index, thus increase the bring the absolute values of `correlation` close to 1. You can read more about this operation from [PG's official document](https://www.postgresql.org/docs/current/sql-cluster.html)
+Given the important role of **correlation** in Index Scan performance. One method to enhance Index Scan performance is `cluster`. This operation reorganizes the table rows physically according to the order of a given index, thus bring the absolute values of `correlation` close to 1. You can read more about this operation from [PG's official document](https://www.postgresql.org/docs/current/sql-cluster.html)
 
 Two important notes when using `cluster`:
 - This will block the table: no other process can read from or write to the table. 
