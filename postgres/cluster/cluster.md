@@ -27,9 +27,11 @@ Let's see.
 > In PG, correlation measures the similarity between the logical order of index entries and the physical order of corresponds heap entries. The range of index correlation values is [-1, 1]. The value 1 means index entries and heap entries are in the same order. The value -1 means they are in inverted order. When this value is 0, there are no correlation at all between them.
 
 Let's say we have a query that read 2 rows from a table. In case of high correlation, adjacent tuples in index space point to adjacent tuples in heap space. In this case, the page that contains the first row may also contains the second row. Recall that recently read pages are stored in PG's cache. The query issues only 1 access to disk for the first row. For the second row, it reads data from the cache.
+In the low correlation scenario, neighbors tuples in index space points to remote tuples in heap space. As they are not in the same page, the cache can not be used in this case. The query issues accesses to disk 2 times.
 
 The following image illustrate the different between high correlation and low correlation scenario.
-@TODO: add image
+
+![Correlation](./correlation.png)
 
 A more formal explanation come from PG's source code. The number of heap pages to fetch is computed in the function `cost_index` located in `/src/backend/optimizer/path/costsize.c`. We denote: 
 - T = number of pages in table
