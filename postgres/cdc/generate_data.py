@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import random
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 from uuid import uuid4
 import pandas as pd
 
@@ -22,14 +22,14 @@ MARKET_IDS = [
 ]
 
 
-def create_table():
+def create_table(table_name: Optional[str] = "orders"):
     connection = connect_db()
     cursor = connection.cursor()
-
+    cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS orders (
+        f"""CREATE TABLE {table_name} (
             market_id varchar,
-            order_id varchar PRIMARY KEY,
+            order_id varchar,
             date timestamp,
             total_price int8,
             nb_items int4
@@ -55,9 +55,9 @@ def load_data():
         load_df_to_db(generate_order(market_id, "2023-12"))
 
 
-def load_df_to_db(df: pd.DataFrame) -> None:
+def load_df_to_db(df: pd.DataFrame, target_table: Optional[str] = "orders") -> None:
     engine = get_engine()
-    df.to_sql("orders", con=engine, if_exists="append", index=False, method="multi")
+    df.to_sql(target_table, con=engine, if_exists="append", index=False, method="multi")
 
 
 def generate_csv(
@@ -153,30 +153,112 @@ def end_of_month(date: datetime) -> datetime:
     return end_of_month_date
 
 
-# create_table()
-# load_data()
+def run():
 
-# low_diff_ratio: (500 + 90) / 93000= 0.006344
-generate_csv(
-    "low_diff_ratio", "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c", "2024-01", 15, 500, 90
-)
+    # create_table()
+    # load_data()
 
-# medium_diff_ratio: (10000 + 8600) / 93000 = 0.2
-generate_csv(
-    "medium_diff_ratio",
-    "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c",
-    "2024-01",
-    15,
-    10000,
-    8600,
-)
+    # low_diff_ratio: (500 + 90) / 93000= 0.006344
+    generate_csv(
+        "low_diff_ratio", "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c", "2024-01", 15, 500, 90
+    )
 
-# high_diff_ratio: (22000 + 47750) / 93000 = 0,75
-generate_csv(
-    "high_diff_ratio",
-    "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c",
-    "2024-01",
-    15,
-    22000,
-    47750,
-)
+    # medium_diff_ratio: (10000 + 8600) / 93000 = 0.2
+    generate_csv(
+        "medium_diff_ratio",
+        "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c",
+        "2024-01",
+        15,
+        10000,
+        8600,
+    )
+
+    # high_diff_ratio: (22000 + 47750) / 93000 = 0,75
+    generate_csv(
+        "high_diff_ratio",
+        "84834db8-c1b4-4e09-90cd-8bae1b4a3f0c",
+        "2024-01",
+        15,
+        22000,
+        47750,
+    )
+
+
+def load_order_data_test_index_correlation(
+    table_name: str,
+    market_ids: List[str],
+    nb_orders_per_day: Optional[int] = 100,
+    start_date: Optional[datetime] = datetime(2024, 1, 1),
+    end_date: Optional[datetime] = datetime(2024, 3, 31),
+):
+
+    date = start_date
+
+    data = []
+    while date <= end_date:
+        for market_id in market_ids:
+            for _ in range(1, nb_orders_per_day + 1):
+                data.append(
+                    {
+                        "market_id": market_id,
+                        "order_id": str(uuid4()),
+                        "date": date,
+                        "total_price": random.randint(100, 10000),
+                        "nb_items": random.randint(1, 20),
+                    }
+                )
+
+        date = date + timedelta(days=1)
+
+    df = pd.DataFrame(data)
+    load_df_to_db(df, table_name)
+
+
+def run_2():
+    table_name = "orders_by_date"
+    create_table(table_name)
+
+    nb_markets = 1000
+    market_ids = [str(uuid4()) for _ in range(nb_markets)]
+
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2022, 1, 1), datetime(2022, 3, 31)
+    )
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2022, 4, 1), datetime(2022, 6, 30)
+    )
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2022, 7, 1), datetime(2022, 9, 30)
+    )
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2022, 10, 1), datetime(2022, 12, 31)
+    )
+
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2023, 1, 1), datetime(2023, 3, 31)
+    )
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2023, 4, 1), datetime(2023, 6, 30)
+    )
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2023, 7, 1), datetime(2023, 9, 30)
+    )
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2023, 10, 1), datetime(2023, 12, 31)
+    )
+
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2024, 1, 1), datetime(2024, 3, 31)
+    )
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2024, 4, 1), datetime(2024, 6, 30)
+    )
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2024, 7, 1), datetime(2024, 9, 30)
+    )
+    load_order_data_test_index_correlation(
+        table_name, market_ids, 5, datetime(2024, 10, 1), datetime(2024, 12, 31)
+    )
+
+
+run_2()
