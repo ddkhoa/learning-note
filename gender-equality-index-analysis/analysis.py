@@ -109,7 +109,7 @@ situation_evolution = (
     .plot.bar(stacked=True, colormap=grey_cmap, rot=0, figsize=(12, 6))
 )
 situation_evolution.set_xlabel(None)
-situation_evolution.set_title("The evolution of the gender equality index")
+situation_evolution.set_title("The evolution of the Professional Equality Index")
 
 # %%
 global_score_2023 = df_cleaned[df_cleaned["global_score"] != "NC"]["global_score"]
@@ -123,7 +123,7 @@ plt.axvline(x=75, color="red", linestyle="--")
 plt.text(45, 23500, "Low equitable threshold = 75", color="red")
 plt.xlabel("Total Score")
 plt.ylabel("Number of companies")
-plt.title("Distribution of Gender Equality Index in 2023")
+plt.title("Distribution of Professional Equality Index in 2023")
 
 # scale values to interval [0,1]
 bin_centers = 0.5 * (bins[:-1] + bins[1:])
@@ -189,24 +189,31 @@ df_merged = pd.merge(
 average_pay_gap_score_by_naf = (
     df_merged.groupby("Libellé")
     .agg(
-        pay_gap_score_mean=("pay_gap_score", "mean"),
-        pay_gap_score_count=("pay_gap_score", "count"),
+        mean=("pay_gap_score", "mean"),
+        count=("pay_gap_score", "count"),
     )
     .reset_index()
-    .sort_values(by="pay_gap_score_mean", ascending=True)
+    .sort_values(by="mean", ascending=True)
 )
 average_pay_gap_score_by_naf = average_pay_gap_score_by_naf[
-    average_pay_gap_score_by_naf["pay_gap_score_count"] >= 100
+    average_pay_gap_score_by_naf["count"] >= 100
 ]
-average_pay_gap_score_by_naf["pay_gap_score_mean"] = (
-    average_pay_gap_score_by_naf["pay_gap_score_mean"].apply(pd.to_numeric).round(2)
+average_pay_gap_score_by_naf["mean"] = (
+    average_pay_gap_score_by_naf["mean"].apply(pd.to_numeric).round(2)
 )
 
-average_pay_gap_score_by_naf.rename(columns={"Libellé": "Sector"}, inplace=True)
+average_pay_gap_score_by_naf.rename(
+    columns={
+        "Libellé": "Sector",
+        "mean": "Average score",
+        "count": "Number of companies",
+    },
+    inplace=True,
+)
 average_pay_gap_score_by_naf = (
     average_pay_gap_score_by_naf.style.hide()
     .format(precision=2)
-    .background_gradient(axis=0, subset=["pay_gap_score_mean"])
+    .background_gradient(axis=0, subset=["Average score"])
 )
 dfi.export(
     average_pay_gap_score_by_naf, "output/average_pay_gap_score_by_naf.png", dpi=300

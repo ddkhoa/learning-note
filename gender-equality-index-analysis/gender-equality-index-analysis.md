@@ -113,7 +113,7 @@ year_counts = year_counts.set_index('Year').transpose()
 dfi.export(year_counts, 'year_counts.png', dpi=150)
 ```
 
-![Number of companies publish their result](./year_counts.png)
+![Number of companies publish their result](./output/year_counts.png)
 
 The expansion of the index in September 2019 and March 2020 explains the huge increment in the number of companies that published their score for 2019.
 This phenomenon is more visible when we group companies by `size`.
@@ -122,7 +122,7 @@ This phenomenon is more visible when we group companies by `size`.
 df_cleaned.groupby(['year', 'size']).size().unstack().plot.bar(stacked=True, rot=0, figsize=(12, 6), colormap=grey_cmap)
 ```
 
-![Number of companies published their gender equality index](./company_publish_score.png)
+![Number of companies published their gender equality index](./output/company_publish_score.png)
 
 An emerging question is whether all companies with more than 50 employees fulfill their obligations. We need to know how many companies have more than 50 salaries to respond to that question. Unfortunately, we don't have the exact number so we'll try to find an acceptable approximate.
 
@@ -179,13 +179,13 @@ Example:
 
 A note below 75 is considered a notable inequality. The company has 3 years to improve the situation. We categorize companies into 3 groups: `To improve` (note < 75), `Equitable` (note >= 75), and `Insufficient data` (note = NC). The following graph illustrates the evolution of 3 groups in the period 2018 - 2023.
 
-![Gender equality index evolution. 2018 - 2023](./gender_equality_score_evolution.png)
+![Gender equality index evolution. 2018 - 2023](./output/professional_equality_score_evolution.png)
 
 The number of companies in inequitable conditions reduced constantly but slowly. In contrast, the number of companies in good condition increased. However, there is a non-negligible number of companies that don't have enough data to compute the global score. We'll explain this case when diving into the 2 most important indicators: `Gender pay gap` and `Salary raises & promotion distribution gap` in the following sections.
 
 In terms of distribution, here's how companies' scores are distributed for 2023.
 
-![Distribution of gender equality index in 2023](./2023_score_distribution.png)
+![Distribution of gender equality index in 2023](./output/2023_score_distribution.png)
 
 ### Gender pay gap indicator
 
@@ -221,14 +221,14 @@ This number is adjusted by a "perfect threshold" of **5%** if the company uses t
 
 The following table represents the ratio of companies having non-calculable pay gap scores. Small companies with employees distributed evenly across groups might not have any groups satisfy the condition (\*), resulting in a non-calculable indicator and thus a non-calculable global score.
 
-![Non-calculable pay gap score ratio](./nc_pay_gap_ratio_by_size.png)
+![Non-calculable pay gap score ratio](./output/nc_pay_gap_ratio_by_size.png)
 
 **About the calculation**
 
 Based on the calculating method, we can see that the indicator is heavily impacted by the most popular group in a company and can possibly hide the inequalities in smaller groups.
 
 The following table represents the average pay gap score for each company size. We can see that the average note of big corporations is always higher than the one of smaller companies.
-![Average pay gap score](./average_pay_gap_by_size.png)
+![Average pay gap score](./output/average_pay_gap_by_size.png)
 
 The 4th indicator `Parity among the 10 highest salaries` also involves wage equality. The correlation between these 2 indicators is only **0.12**, which indicates a **very weak relation** between them.
 
@@ -240,7 +240,7 @@ Using the column `naf_code` that represents the company's activity code, we can 
 
 The following table shows the average pay gap score by sector for 2023. It's worth noting that the highest salary disparities occur in industries with high levels of cognitive demand such as Financial and insurance activities, Information and Communication, Education, and Scientific and technical activities.
 
-![Average pay gap score by sector](./average_pay_gap_score_by_naf.png).
+![Average pay gap score by sector](./output/average_pay_gap_score_by_naf.png).
 
 ### Salary raises and promotions distribution gap
 
@@ -263,13 +263,13 @@ For all indicators in this group, if the result is favored for the less well-pai
 **A more popular indicator**
 
 The following table illustrates the ratio of companies that don't dispose of sufficient data to compute the augmentation distribution gap score. The condition is harder to meet for smaller companies. However, it is much more reachable than the first indicator where we already saw 3 times higher ratios.
-![Non calculable augmentation distribution gap score](./nc_augmentation_gap_ratio_by_size.png)
+![Non calculable augmentation distribution gap score](./output/nc_augmentation_gap_ratio_by_size.png)
 
 **The situation is improved globally**
 
 The 2 following tables show the average augmentation distribution gap score. The steady increase in scores over the years indicates that the situation is gradually improving. 
-![Average augmentation distribution gap score - Companies with 50 - 250 employees](./average_aug_gap_score_50_250.png).
-![Average augmentation distribution gap score - Companies with more than 250 employees](./average_aug_gap_score_above_250.png).
+![Average augmentation distribution gap score - Companies with 50 - 250 employees](./output/average_aug_gap_score_50_250.png).
+![Average augmentation distribution gap score - Companies with more than 250 employees](./output/average_aug_gap_score_above_250.png).
 
 **Ranked augmentation distribution gap score by sector**
 
@@ -277,8 +277,8 @@ Joining the data with the activity hierarchical dataset as shown in the previous
 
 The 2 following tables show the average augmentation distribution gap score by sector for 2023. Industries with low pay gap scores like Scientific and technical activities, Financial and insurance activities, Information and Communication, and Education have good scores this time. This indicates that efforts are being made to reduce gender inequality in these industries. In contrast, the Accommodation and restoration industry, which has the smallest pay gap between men and women, exhibits an inequality in salary raises and promotion. Most notably, the construction industry has low scores in both of these important criteria.
 
-![Average augmentation distribution gap score by sector - Companies with 50 - 250 employees](./average_aug_gap_score_50_250_by_naf.png).
-![Average augmentation distribution gap score by sector - Companies with more than 250 employees](./average_aug_gap_score_above_250_by_naf.png).
+![Average augmentation distribution gap score by sector - Companies with 50 - 250 employees](./output/average_aug_gap_score_50_250_by_naf.png).
+![Average augmentation distribution gap score by sector - Companies with more than 250 employees](./output/average_aug_gap_score_above_250_by_naf.png).
 
 ### Conclusion
 In this article, we examined the Gender Equality Index dataset. Through data analysis and visualization, we have a better understanding of the gender equality index at work as well as its two main components: the salary gap index and the augmentation distribution gap index. Through this analysis, we have seen that there are still many companies with more than 50 employees that do not publish the index, even though this is required. The way the pay gap index is calculated makes it impossible for many companies to calculate it, leading to the overall index being incalculable. Additionally, this index also can potentially hide inequality among minority groups within the company. The positive point is that the general index and its two key components are improving year after year. Finally, data aggregation always comes with a loss of detail. Gender balance at work is a complex aspect that is difficult to cover with one number fully. There we should delve deeper into the facts instead of drawing conclusions based on a single figure.
