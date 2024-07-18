@@ -18,14 +18,14 @@ With partition pruning, the engine examines the table structures to determine th
 
 We should be clear about the performance difference between a non-partitioned and a partitioned table in case of searching by a *selective* index. In this case, the number of rows to retrieve is small. `Index Scan` strategy is employed in which the engine visits the index space first to retrieve index tuples. Then the engine does some heap fetches to get the data. The time to find the index tuples is O(logN). Even with `partition pruning`, the difference in response time between a non-partitioned and a partitioned table is opaque in this situation.
 
-`Partition pruning`'s effect becomes visible when the query targets more rows. Searching by index on a big table can be *slower* than a sequential scan on a partition. Because the cost of fetching many index pages and heap pages in a **non-sequential** order outweighs the cost of sequential fetches plus checking the condition on a smaller data set. 
+`Partition pruning`'s effect becomes visible when the query targets more rows. Searching by index on a big table can be *slower* than a sequential scan on a partition because the cost of fetching many index pages and heap pages in a **non-sequential** order outweighs the cost of sequential fetches plus checking the condition on a smaller data set. 
 
 > Partitioning can improve query performance by turning an index scan on a big table into a sequential scan on a partition, using the partition pruning technique.
 
 **Partitionwise join and partitionwise aggregate**
 When joining 2 partitioned tables, `partitionwise join` allows the join to be done on each matching partition rather than the whole table. In my work, I haven't used this option yet. 
 
-When the `GROUP BY` clause doesn't contain any columns used to partition the table, then `partitionwise aggregate` could help. It allows the group by (and all precedent operations) to be done on each partition separately. Based on the hardware configuration, the engine can execute some operations in parallel and accelerate the execution. In my experience, it's not easy to archive a big gain using `partitionwise aggregate` due to the following challenges:
+When the `GROUP BY` clause doesn't contain any columns used to partition the table, then `partitionwise aggregate` could help. It allows the group by (and all precedent operations) to be done on each partition separately. Based on the hardware configuration, the engine can execute some operations in parallel and accelerate the execution. In my experience, it's not easy to achieve a big gain using `partitionwise aggregate` due to the following challenges:
 
 - If a partition is significantly larger than others, the impact of parallelism is canceled.
 - The number of workers is smaller than the number of parallel-able tasks.
@@ -39,7 +39,7 @@ As a rule of thumb, always **benchmark** different partition columns to choose t
 Partitioning has some drawbacks that a non-partition table doesn't have. In a partitioned table, each partition is a complete and independent entity. This creates limits and extra work when we want to create a unique constraint or an index across partitions.
 
 **Unique constraints**
-The engine only guarantees the intra-partition uniqueness. As a consequence, global unique constraints must include all partition columns.
+The engine only guarantees intra-partition uniqueness. As a consequence, global unique constraints must include all partition columns.
 
 **Indexes**
 `CREATE INDEX CONCURRENTLY` query cannot be run on a partitioned table. However, we can still create such an index while avoiding locking the table. The process is:
@@ -60,7 +60,7 @@ When the table is divided into partitions, each partition can be vacuumed and an
 I had bad memories of the `VACUUM ANALYZE` query. One night, I upgraded the server to the new major version. Because the statistics were not transferred, I analyzed all the tables and the process took too long. Queries run on the big table consumed all available CPU and slowed down the server. I wasn't aware of the issue until checking the system the following day. Accelerating the `VACUUM ANALYZE` query was the main reason for partitioning that table.
 
 ### Partition methods in PostgreSQL
-PostgreSQL has 3 inherent modes to partition a table: **Range Partitioning**, **List Partitioning** and **Hash Partitioning**
+PostgreSQL has 3 inherent modes to partition a table: **Range Partitioning**, **List Partitioning**, and **Hash Partitioning**
 
 #### Range Partitioning
 In this mode, we determine some `ranges` to group data into partitions. The method is suitable for partitioning data using continuous value columns. In practice, when we are interested in recent data more than historical ones, then the `date` column is a natural candidate to partition the table using `range partitioning`. With `partition pruning`, the query that gets last year's data works on a relatively fixed amount of data thus providing a consistent response time, regardless of how old the system is.
