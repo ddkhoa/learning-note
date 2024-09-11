@@ -1,0 +1,5 @@
+- Ref: https://www.tutorialspoint.com/sql/sql-in-vs-exists.htm
+- IN can be followed by a list of values or a subquery
+- EXISTS can be followed by a subquery only
+- When the subquery is very large, replace IN by EXISTS improved the performance drastically. Because the subquery stop when the first match found.
+- TODO: performance benchmarking
