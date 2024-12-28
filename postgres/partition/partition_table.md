@@ -48,16 +48,12 @@ The engine only guarantees intra-partition uniqueness. As a consequence, global 
 - Create the index on each partition using the `CONCURRENTLY` option
 - Attach each partition index to the parent index
 
-#### Maintenance operations
-Partitioning a big table makes maintenance operations like `ANALYZE` and `VACUUM` run more frequently and smoother.
+#### VACUUM
+Partitioning a big table makes `VACUUM` command run more frequently and smoother.
 
-`ANALYZE` query collects data statistics which are used by the engine to determine the most efficient execution plan. The amount of data collected is *proportioned* to the number of rows in a table. For a big table, the `ANALYZE` query can be very long. In the windows when this command has not been finished, the statistics are not available and queries made against the table could be resource-intensive and time-consuming.
+The `VACUUM` query removes obsolete rows of a table. During the vacuum process, the space previously occupied by dead rows is cleaned up and can be reused by the same table. Running VACUUM regularly is necessary to prevent dead data from accumulating and slowing down queries. The VACUUM is automatically triggered when inserted or updated and deleted rows exceed a threshold *relative* to the table's size (configured by `autovacuum_vacuum_insert_scale_factor` and `autovacuum_vacuum_scale_factor`).`VACUUM` a big table is a time-consuming task. Worse, because there is a lot of data to vacuum on a big table, the cost of this operation can exceed the limit (`autovacuum_vacuum_cost_limit`), and the vacuum is slowed down (`autovacuum_vacuum_cost_delay`). In this situation, the table usually ends up being bloated.
 
-The `VACUUM` query removes obsolete rows of a table. During the vacuum process, the space previously occupied by obsolete rows is cleaned up and can be reused by the same table. VACUUM regularly is necessary to prevent dead data from accumulating and slowing down queries. The VACUUM is automatically triggered when inserted or updated and deleted rows exceed a threshold *relative* to the table's size (configured by `autovacuum_vacuum_insert_scale_factor` and `autovacuum_vacuum_scale_factor`). Like the `ANALYZE` query, `VACUUM` a big table is a time-consuming task. Worse, because there is a lot of data to vacuum on a big table, the cost of this operation can exceed the limit (`autovacuum_vacuum_cost_limit`), and the vacuum is slowed down ( `autovacuum_vacuum_cost_delay`). In this situation, the table usually ends up being bloated.
-
-When the table is divided into partitions, each partition can be vacuumed and analyzed separately. Because the partition is way smaller than the original table, the `VACUUM` and `ANALYZE` operations for a partition can finish faster. Multiple `VACUUM ANALYZE` commands can be run in parallel (configured by `autovacuum_max_workers`) to accelerate the process.
-
-I had bad memories of the `VACUUM ANALYZE` query. One night, I upgraded the server to the new major version. Because the statistics were not transferred, I analyzed all the tables and the process took too long. Queries run on the big table consumed all available CPU and slowed down the server. I wasn't aware of the issue until checking the system the following day. Accelerating the `VACUUM ANALYZE` query was the main reason for partitioning that table.
+When the table is divided into partitions, each partition can be vacuumed separately. Because the partition is way smaller than the original table, the `VACUUM` command on a partition can finish faster. Multiple `VACUUM` commands can be run in parallel (configured by `autovacuum_max_workers`) to accelerate the process.
 
 ### Partition methods in PostgreSQL
 PostgreSQL has 3 inherent modes to partition a table: **Range Partitioning**, **List Partitioning**, and **Hash Partitioning**
