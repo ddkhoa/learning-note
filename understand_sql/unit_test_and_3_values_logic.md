@@ -2,7 +2,7 @@
 
 ## The setup
 
-Imagine we have 2 tables, `metrics` and `metrics_values`, that store some metrics and their daily values.
+Imagine we have 2 tables, `metrics` and `metrics_values`, which store some metrics and their daily values.
 
 ```sql
 CREATE TABLE metrics (
@@ -126,8 +126,8 @@ The result:
 | 5   | 2024-12-01 | 30    | NULL  | NULL  |
 | 5   | 2024-12-02 | 30    | NULL  | NULL  |
 
-We have the metric 5 in the result. Its values are NULL. Great! But wait a second, we also have NULL in the column ratio, which mean the second step is not necessary!
-But wait a second, the query ran without raising error, which mean we can **divide by NULL** in SQL?
+We have the metric 5 in the result. Its values are NULL. Great! But wait a second, we also have NULL in the column ratio, which means the second step is not necessary!
+But wait a second, the query ran without raising an error, which means we can **divide by NULL** in SQL.
 
 And yes, we can!
 
